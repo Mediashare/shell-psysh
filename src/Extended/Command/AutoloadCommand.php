@@ -43,8 +43,9 @@ class AutoloadCommand extends BaseCommand
             // Set all variables in shell scope
             $shell->setScopeVariables($updatedVars);
             
-            // Sync to all contexts
-            $syncService->syncFromMainShell();
+            // Initialize and sync to all contexts
+            $syncService->initialize();
+            $syncService->captureMainShellVariables();
         }
 
         // Write welcome message

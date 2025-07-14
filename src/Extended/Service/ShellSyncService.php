@@ -11,10 +11,19 @@ class ShellSyncService
 {
     private ?Shell $mainShell = null;
     private array $lastKnownVariables = [];
+    private static $instance = null;
     
     public function __construct(?Shell $mainShell = null)
     {
         $this->mainShell = $mainShell;
+    }
+
+    public static function getInstance(): self
+    {
+        if (self::$instance === null) {
+            self::$instance = new self();
+        }
+        return self::$instance;
     }
     
     /**

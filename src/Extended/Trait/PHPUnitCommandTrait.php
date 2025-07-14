@@ -98,8 +98,13 @@ trait PHPUnitCommandTrait
     protected function executePhpCode(string $code): mixed
     {
         try {
-            // Récupérer les variables du shell depuis les globals
-            $shellVariables = $GLOBALS['psysh_shell_variables'] ?? [];
+            // Récupérer les variables du shell via le service de synchronisation
+            $syncService = $GLOBALS['psysh_shell_sync_service'] ?? null;
+            if ($syncService && $syncService instanceof \Psy\Extended\Service\ShellSyncService) {
+                $shellVariables = $syncService->getMainShellVariables();
+            } else {
+                $shellVariables = $GLOBALS['psysh_shell_variables'] ?? [];
+            }
             
             // Récupérer le contexte du mode code s'il existe
             $codeContext = $GLOBALS['phpunit_code_context'] ?? [];
@@ -119,8 +124,13 @@ trait PHPUnitCommandTrait
     protected function executePhpCodeWithContext(string $code, array &$context = []): mixed
     {
         try {
-            // Récupérer les variables du shell depuis les globals
-            $shellVariables = $GLOBALS['psysh_shell_variables'] ?? [];
+            // Récupérer les variables du shell via le service de synchronisation
+            $syncService = $GLOBALS['psysh_shell_sync_service'] ?? null;
+            if ($syncService && $syncService instanceof \Psy\Extended\Service\ShellSyncService) {
+                $shellVariables = $syncService->getMainShellVariables();
+            } else {
+                $shellVariables = $GLOBALS['psysh_shell_variables'] ?? [];
+            }
             
             // Fusionner avec le contexte persistant
             $allVariables = array_merge($shellVariables, $context);
@@ -173,7 +183,13 @@ trait PHPUnitCommandTrait
         $shell = new \Psy\Shell($config);
         
         // Récupérer le contexte partagé depuis toutes les sources
-        $shellVariables = $GLOBALS['psysh_shell_variables'] ?? [];
+        $syncService = $GLOBALS['psysh_shell_sync_service'] ?? null;
+        if ($syncService && $syncService instanceof \Psy\Extended\Service\ShellSyncService) {
+            $shellVariables = $syncService->getMainShellVariables();
+        } else {
+            $shellVariables = $GLOBALS['psysh_shell_variables'] ?? [];
+        }
+        
         $codeContext = $GLOBALS['phpunit_code_context'] ?? [];
         $mainShellContext = $this->getMainShellContext();
         
