@@ -17,40 +17,40 @@ echo ""
 
 # Test PHPUnitAssertCommand (phpunit:assert)
 run_test_step "phpunit:assert with valid condition" \
-    "$PROJECT_RO$PROJECT_ROOT/bin/psysh -c \"phpunit:assert '1 == 1' --message='This should pass'\"" \
+    "$PROJECT_ROOT/bin/psysh -c \"phpunit:assert '1 == 1' --message='This should pass'\"" \
     "✅" \
     "check_contains"
 
 run_test_step "phpunit:assert with false condition (should fail)" \
-    "$PROJECT_RO$PROJECT_ROOT/bin/psysh -c \"phpunit:assert '1 == 2' --message='This should fail'\"" \
+    "$PROJECT_ROOT/bin/psysh -c \"phpunit:assert '1 == 2' --message='This should fail'\"" \
     "❌" \
     "check_contains"
 
 # Test PHPUnitAssertEqualsCommand (phpunit:assert-equals)
 run_test_step "phpunit:assert-equals with equal strings" \
-    "$PROJECT_RO$PROJECT_ROOT/bin/psysh -c \"phpunit:assert-equals 'Hello' 'Hello' 'Strings should be equal'\"" \
+    "$PROJECT_ROOT/bin/psysh -c \"phpunit:assert-equals 'Hello' 'Hello' 'Strings should be equal'\"" \
     "✅" \
     "check_contains"
 
 run_test_step "phpunit:assert-equals with different values (should fail)" \
-    "$PROJECT_RO$PROJECT_ROOT/bin/psysh -c \"phpunit:assert-equals 'Hello' 'World' 'Different strings'\"" \
+    "$PROJECT_ROOT/bin/psysh -c \"phpunit:assert-equals 'Hello' 'World' 'Different strings'\"" \
     "❌" \
     "check_contains"
 
 # Test PHPUnitTypedAssertCommand (phpunit:assert-type)
 run_test_step "phpunit:assert-type with correct type" \
-    "$PROJECT_RO$PROJECT_ROOT/bin/psysh -c \"phpunit:assert-type 'string' '\\\"Hello World\\\"'\"" \
+    "$PROJECT_ROOT/bin/psysh -c \"phpunit:assert-type 'string' '\\\"Hello World\\\"'\"" \
     "✅" \
     "check_contains"
 
 run_test_step "phpunit:assert-type with wrong type (should fail)" \
-    "$PROJECT_RO$PROJECT_ROOT/bin/psysh -c \"phpunit:assert-type 'integer' '\\\"Hello World\\\"'\"" \
+    "$PROJECT_ROOT/bin/psysh -c \"phpunit:assert-type 'integer' '\\\"Hello World\\\"'\"" \
     "❌" \
     "check_contains"
 
 # Test simple scenario instead of combined
 run_test_step "Simple assert numeric" \
-    "$PROJECT_RO$PROJECT_ROOT/bin/psysh -c \"phpunit:assert 'is_numeric(5)'\"" \
+    "$PROJECT_ROOT/bin/psysh -c \"phpunit:assert 'is_numeric(5)'\"" \
     "✅" \
     "check_contains"
 

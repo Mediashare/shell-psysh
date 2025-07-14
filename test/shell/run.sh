@@ -121,7 +121,7 @@ run_test_simple() {
     # Extraire les statistiques des étapes pour affichage
     local step_stats=""
     if [[ -f "$temp_output" ]]; then
-        local total_steps=$(grep -c ">>> Étape\|>>> Test" "$temp_output" 2>/dev/null || echo "0")
+        local total_steps=$(grep -c ">>> Étape|>>> Test" "$temp_output" 2>/dev/null || echo "0")
         local passed_steps=$(grep -c "✅ PASS:" "$temp_output" 2>/dev/null || echo "0")
         local failed_steps=$(grep -c "❌ FAIL:" "$temp_output" 2>/dev/null || echo "0")
         
@@ -135,8 +135,11 @@ run_test_simple() {
         [[ "$passed_steps" =~ ^[0-9]+$ ]] || passed_steps=0
         [[ "$failed_steps" =~ ^[0-9]+$ ]] || failed_steps=0
         
-        if [[ $total_steps -gt 0 ]]; then
-            step_stats=" (${passed_steps}/${total_steps} étapes)"
+        # Update to reflect accurate step stats
+        step_stats=" (${passed_steps}/${failed_steps}/${total_steps} étapes)"
+        # Fix exit status determination if there are failed steps
+        if [[ $failed_steps -gt 0 ]]; then
+            exit_code=1
         fi
     fi
     
@@ -378,7 +381,10 @@ run_test() {
     
     if [ ! -f "$test_file" ]; then
         echo -e "${RED}❌ Fichier non trouvé: $test_file${NC}"
-        if [[ $AUTO_MODE != "1" ]]; then
+        # modify to skip if no steps detected
+        if [[ $total_steps -eq 0 ]]; then
+            echo -e "${YELLOW}⚠️  SKIPPED: Aucune étape détectée${NC}"
+        elif [[ $AUTO_MODE != "1" ]]; then
             sleep 2
         fi
         return
