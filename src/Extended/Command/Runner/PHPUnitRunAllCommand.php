@@ -48,6 +48,7 @@ class PHPUnitRunAllCommand extends \Psy\Extended\Command\BaseCommand
         try {
             $service = $this->phpunit();
             $activeTests = $service->getActiveTests();
+            dump($activeTests);
             
             if (empty($activeTests)) {
                 $output->writeln($this->formatError("❌ Aucun test interactif trouvé"));

@@ -83,9 +83,9 @@ class PHPUnitSnapshotCommand extends \Psy\Extended\Command\BaseCommand
             $output->writeln($this->formatTestCode($snapshot['assertion']));
             
             // Ajouter l'assertion au test courant si disponible
-            $currentTest = $this->getCurrentTest();
+            $service = $this->phpunit();
+            $currentTest = $service->getCurrentTest()?->getTestClassName();
             if ($currentTest) {
-                $service = $this->phpunit();
                 $service->addAssertionToTest($currentTest, $snapshot['assertion']);
                 $output->writeln($this->formatInfo("Assertion ajoutée au test {$currentTest}"));
             }

@@ -99,6 +99,9 @@ class Shell extends Application
 
         $this->config->setShell($this);
 
+        // Initialize UnifiedSyncService automatically
+        $this->initializeUnifiedSync();
+
         // Register the current shell session's config with \Psy\info
         \Psy\info($this->config);
     }
@@ -1296,6 +1299,32 @@ class Shell extends Application
     public function getLastExecSuccess(): bool
     {
         return $this->lastExecSuccess;
+    }
+
+    /**
+     * Initialize UnifiedSyncService automatically
+     */
+    private function initializeUnifiedSync(): void
+    {
+        try {
+            // Initialize UnifiedSyncService
+            $unifiedSync = \Psy\Extended\Service\UnifiedSyncService::getInstance();
+            $unifiedSync->setMainShell($this);
+            $GLOBALS['psysh_unified_sync_service'] = $unifiedSync;
+            
+            // Also initialize ShellSyncService for backward compatibility
+            $shellSync = \Psy\Extended\Service\ShellSyncService::getInstance();
+            $shellSync->setMainShell($this);
+            $GLOBALS['psysh_shell_sync_service'] = $shellSync;
+            
+            // Initialize both services with current variables
+            $currentVars = $this->getScopeVariables();
+            $unifiedSync->setVariables($currentVars);
+            $shellSync->initialize();
+            
+        } catch (\Exception $e) {
+            // Ignore errors in sync service initialization
+        }
     }
 
     /**

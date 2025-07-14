@@ -563,9 +563,9 @@ class PHPUnitTypedAssertCommand extends \Psy\Extended\Command\BaseCommand
     
     private function addAssertionToTest(string $expression, string $method, array $params): void
     {
-        $currentTest = $this->getCurrentTest();
+        $service = $this->phpunit();
+        $currentTest = $service->getCurrentTest()?->getTestClassName();
         if ($currentTest) {
-            $service = $this->phpunit();
             $paramStr = empty($params) ? '' : implode(', ', array_map(fn($p) => var_export($p, true), $params)) . ', ';
             $assertionCode = "\$this->{$method}({$paramStr}{$expression});";
             $service->addAssertionToTest($currentTest, $assertionCode);

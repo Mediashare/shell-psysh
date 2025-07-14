@@ -45,16 +45,6 @@ trait PHPUnitCommandTrait
         $GLOBALS['phpunit_code_mode'] = $mode;
     }
 
-    protected function getCurrentTest(): ?string
-    {
-        return $GLOBALS['phpunit_current_test'] ?? null;
-    }
-
-    protected function setCurrentTest(?string $testName): void
-    {
-        $GLOBALS['phpunit_current_test'] = $testName;
-    }
-
     protected function formatSuccess(string $message): string
     {
         return "✅ {$message}";
@@ -97,7 +87,14 @@ trait PHPUnitCommandTrait
     protected function executePhpCode(string $code): mixed
     {
         try {
-            // Synchroniser automatiquement les variables avant l'exécution
+            // Utiliser le service de synchronisation unifié
+            $unifiedSync = $GLOBALS['psysh_unified_sync_service'] ?? null;
+            if ($unifiedSync && $unifiedSync instanceof \Psy\Extended\Service\UnifiedSyncService) {
+                $context = [];
+                return $unifiedSync->executeWithSync($code, $context);
+            }
+            
+            // Fallback sur l'ancienne méthode
             $syncService = $GLOBALS['psysh_shell_sync_service'] ?? null;
             if ($syncService && $syncService instanceof \Psy\Extended\Service\ShellSyncService) {
                 $syncService->autoSync();
@@ -124,7 +121,13 @@ trait PHPUnitCommandTrait
     protected function executePhpCodeWithContext(string $code, array &$context = []): mixed
     {
         try {
-            // Récupérer les variables du shell via le service de synchronisation
+            // Utiliser le service de synchronisation unifié
+            $unifiedSync = $GLOBALS['psysh_unified_sync_service'] ?? null;
+            if ($unifiedSync && $unifiedSync instanceof \Psy\Extended\Service\UnifiedSyncService) {
+                return $unifiedSync->executeWithSync($code, $context);
+            }
+            
+            // Fallback sur l'ancienne méthode
             $syncService = $GLOBALS['psysh_shell_sync_service'] ?? null;
             if ($syncService && $syncService instanceof \Psy\Extended\Service\ShellSyncService) {
                 $shellVariables = $syncService->getMainShellVariables();
@@ -175,7 +178,13 @@ trait PHPUnitCommandTrait
 
     protected function createSubShell(): \Psy\Shell
     {
-        // Créer une nouvelle instance de shell PsySH
+        // Utiliser le service de synchronisation unifié
+        $unifiedSync = $GLOBALS['psysh_unified_sync_service'] ?? null;
+        if ($unifiedSync && $unifiedSync instanceof \Psy\Extended\Service\UnifiedSyncService) {
+            return $unifiedSync->createSyncedSubShell('phpunit:code> ');
+        }
+        
+        // Fallback sur l'ancienne méthode
         $config = new \Psy\Configuration();
         $config->setPrompt('phpunit:code> ');
         $config->setStartupMessage('🧪 Mode code PHPUnit activé - Le code sera automatiquement ajouté au test');
@@ -230,7 +239,89 @@ trait PHPUnitCommandTrait
     protected function syncContextFromShell(\Psy\Shell $shell): void
     {
         try {
-            // Récupérer les variables du shell
+            // Utiliser le service de synchronisation unifié
+            $unifiedSync = $GLOBALS['psysh_unified_sync_service'] ?? null;
+            if ($unifiedSync && $unifiedSync instanceof \Psy\Extended\Service\UnifiedSyncService) {
+                $unifiedSync->syncFromSubShell($shell);
+                
+                // Obtenir les variables pour l'ajout au test
+                $variables = $shell->getScopeVariables();
+                $existingVars = $GLOBALS['phpunit_code_context'] ?? [];
+                
+                // Filtrer les variables système
+                $filteredVariables = [];
+                $systemVars = ['_', '__', '___', '_e', '_ex', '_err', '__psysh__', '__psysh_shell__'];
+                foreach ($variables as $name => $value) {
+                    if (!in_array($name, $systemVars)) {
+                        $filteredVariables[$name] = $value;
+                    }
+                }
+                
+                // Détecter les nouvelles variables et modifications
+                $newVars = [];
+                $modifiedVars = [];
+                foreach ($filteredVariables as $name => $value) {
+                    if (!isset($existingVars[$name])) {
+                        $newVars[$name] = $value;
+                    } elseif ($existingVars[$name] !== $value) {
+                        $modifiedVars[$name] = $value;
+                    }
+                }
+                
+                // Mise à jour des globals
+                $GLOBALS['phpunit_code_context'] = array_merge($existingVars, $filteredVariables);
+                
+                // Debug détaillé
+                if ($this->debug) {
+                    echo "\n" . str_repeat('=', 60) . "\n";
+                    echo "🔄 SYNCHRONISATION SHELL phpunit:code → CONTEXTE GLOBAL\n";
+                    echo str_repeat('=', 60) . "\n";
+                    echo "📊 Variables totales dans le shell: " . count($variables) . "\n";
+                    echo "📊 Variables filtrées: " . count($filteredVariables) . "\n";
+                    echo "📊 Variables existantes: " . count($existingVars) . "\n";
+                    echo "📊 Nouvelles variables: " . count($newVars) . "\n";
+                    echo "📊 Variables modifiées: " . count($modifiedVars) . "\n";
+                    
+                    if (!empty($newVars)) {
+                        echo "\n✅ NOUVELLES VARIABLES CAPTURÉES:\n";
+                        foreach ($newVars as $name => $value) {
+                            $type = gettype($value);
+                            $preview = $this->getVariablePreview($value);
+                            echo "   + \$$name ($type): $preview\n";
+                        }
+                    }
+                    
+                    if (!empty($modifiedVars)) {
+                        echo "\n🔄 VARIABLES MODIFIÉES:\n";
+                        foreach ($modifiedVars as $name => $value) {
+                            $type = gettype($value);
+                            $preview = $this->getVariablePreview($value);
+                            echo "   ~ \$$name ($type): $preview\n";
+                        }
+                    }
+                    
+                    if (!empty($filteredVariables)) {
+                        echo "\n📋 TOUTES LES VARIABLES SYNCHRONISÉES:\n";
+                        foreach ($filteredVariables as $name => $value) {
+                            $type = gettype($value);
+                            $preview = $this->getVariablePreview($value);
+                            echo "   - \$$name ($type): $preview\n";
+                        }
+                    }
+                    
+                    echo str_repeat('=', 60) . "\n\n";
+                }
+                
+                // Ajouter le code exécuté dans le shell au test
+                $addedLines = $this->addCapturedCodeToTest($filteredVariables);
+                if ($addedLines > 0) {
+                    echo "✅ {$addedLines} ligne(s) de code ajoutée(s) au test\n";
+                }
+                
+                return;
+            }
+            
+            // Fallback sur l'ancienne méthode
             $reflection = new \ReflectionClass($shell);
             $contextProperty = $reflection->getProperty('context');
             $contextProperty->setAccessible(true);
@@ -263,20 +354,38 @@ trait PHPUnitCommandTrait
                 $this->syncToMainShell($filteredVariables);
             }
         } catch (\Exception $e) {
-            echo "⚠️  Attention: Impossible de synchroniser le contexte: " . $e->getMessage() . "\n";
+            if ($this->debug) {
+                echo "❌ [ERREUR] Impossible de synchroniser le contexte: " . $e->getMessage() . "\n";
+            }
+        }
+    }
+    
+    /**
+     * Get a preview of a variable for debug output
+     */
+    protected function getVariablePreview($value): string
+    {
+        if (is_null($value)) {
+            return 'null';
+        } elseif (is_bool($value)) {
+            return $value ? 'true' : 'false';
+        } elseif (is_string($value)) {
+            return strlen($value) > 50 ? '"' . substr($value, 0, 47) . '..."' : '"' . $value . '"';
+        } elseif (is_numeric($value)) {
+            return (string) $value;
+        } elseif (is_array($value)) {
+            return 'array(' . count($value) . ' elements)';
+        } elseif (is_object($value)) {
+            return get_class($value) . ' object';
+        } else {
+            return gettype($value);
         }
     }
 
     protected function addCapturedCodeToTest(array $filteredVariables): int
     {
-        $currentTest = $this->getCurrentTest();
-        if (!$currentTest) {
-            return 0;
-        }
-
-        $service = $this->getPhpunitService();
-        $test = $service->getTest($currentTest);
-
+        $service = $this->phpunit();
+        $test = $service->getCurrentTest();
         if (!$test) {
             return 0;
         }

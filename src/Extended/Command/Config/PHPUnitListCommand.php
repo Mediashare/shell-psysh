@@ -90,7 +90,7 @@ class PHPUnitListCommand extends \Psy\Extended\Command\BaseCommand
         $output->writeln($this->formatInfo('Tests actifs :'));
         
         foreach ($activeTests as $test) {
-            $className = $test->getClassName();
+            $className = $test->getTargetClass();
             $testName = $test->getTestName();
             $lineCount = $test->getCodeLineCount();
             $assertionCount = count($test->getAssertions());

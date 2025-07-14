@@ -102,14 +102,14 @@ class PHPUnitRunCommand extends \Psy\Extended\Command\BaseCommand
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $testName = $input->getArgument('test') ?? $this->getCurrentTest();
+        $service = $this->phpunit();
+        $testName = $input->getArgument('test') ?? $service->getCurrentTest()?->getTestClassName();
         
         if (!$testName) {
             $output->writeln($this->formatError('Aucun test à exécuter. Créez d\'abord un test avec phpunit:create'));
             return 1;
         }
         
-        $service = $this->phpunit();
         $activeTests = $service->getActiveTests();
         
         if (!isset($activeTests[$testName])) {
@@ -131,7 +131,7 @@ class PHPUnitRunCommand extends \Psy\Extended\Command\BaseCommand
     {
         $output->writeln("\n" . str_repeat("═", 80));
         $output->writeln($this->formatTest("🧪 EXÉCUTION DU TEST: {$test->getTestName()}"));
-        $output->writeln("📂 Classe: {$test->getClassName()}");
+        $output->writeln("📂 Classe: {$test->getTargetClass()}");
         $output->writeln("📄 Lignes de code: " . count($test->getCodeLines()));
         $output->writeln("🔍 Assertions: " . count($test->getAssertions()));
         $output->writeln(str_repeat("═", 80));
@@ -195,7 +195,7 @@ class PHPUnitRunCommand extends \Psy\Extended\Command\BaseCommand
                 $output->writeln("\n🧮 Assertion {$assertionNumber}/{$totalAssertions}: {$assertion}");
                 
                 try {
-                    $result = $this->executePhpCode("return {$assertion};");
+                    $result = $this->executePhpUnitAssertion($assertion);
                     
                     if ($result === true) {
                         $passedAssertions++;
@@ -316,6 +316,140 @@ class PHPUnitRunCommand extends \Psy\Extended\Command\BaseCommand
             $output->writeln("   ⚠️  {$bar} {$percentage}% ({$passed}/{$total})");
         } else {
             $output->writeln("   ❌ {$bar} {$percentage}% ({$passed}/{$total})");
+        }
+    }
+    
+    /**
+     * Execute a PHPUnit assertion by simulating PHPUnit methods
+     */
+    private function executePhpUnitAssertion(string $assertion): bool
+    {
+        // Remove $this-> prefix and semicolon
+        $assertion = str_replace('$this->', '', $assertion);
+        $assertion = rtrim($assertion, ';');
+        
+        // Parse the assertion method and arguments
+        if (preg_match('/^(\w+)\((.*)\)$/', $assertion, $matches)) {
+            $method = $matches[1];
+            $argsString = $matches[2];
+            
+            // Parse arguments - simple implementation for common cases
+            $args = $this->parseAssertionArguments($argsString);
+            
+            return $this->executeAssertionMethod($method, $args);
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Parse assertion arguments from string
+     */
+    private function parseAssertionArguments(string $argsString): array
+    {
+        if (empty(trim($argsString))) {
+            return [];
+        }
+        
+        $args = [];
+        $parts = explode(',', $argsString);
+        
+        foreach ($parts as $part) {
+            $part = trim($part);
+            
+            // Evaluate the argument in the current context
+            try {
+                $value = $this->executePhpCode("return {$part};");
+                $args[] = $value;
+            } catch (\Throwable $e) {
+                // If evaluation fails, treat as string literal
+                $args[] = $part;
+            }
+        }
+        
+        return $args;
+    }
+    
+    /**
+     * Execute assertion method with arguments
+     */
+    private function executeAssertionMethod(string $method, array $args): bool
+    {
+        switch ($method) {
+            case 'assertTrue':
+                return count($args) >= 1 && $args[0] === true;
+                
+            case 'assertFalse':
+                return count($args) >= 1 && $args[0] === false;
+                
+            case 'assertSame':
+                return count($args) >= 2 && $args[0] === $args[1];
+                
+            case 'assertEquals':
+                return count($args) >= 2 && $args[0] == $args[1];
+                
+            case 'assertNotEquals':
+                return count($args) >= 2 && $args[0] != $args[1];
+                
+            case 'assertNotSame':
+                return count($args) >= 2 && $args[0] !== $args[1];
+                
+            case 'assertNull':
+                return count($args) >= 1 && $args[0] === null;
+                
+            case 'assertNotNull':
+                return count($args) >= 1 && $args[0] !== null;
+                
+            case 'assertEmpty':
+                return count($args) >= 1 && empty($args[0]);
+                
+            case 'assertNotEmpty':
+                return count($args) >= 1 && !empty($args[0]);
+                
+            case 'assertGreaterThan':
+                return count($args) >= 2 && $args[1] > $args[0];
+                
+            case 'assertGreaterThanOrEqual':
+                return count($args) >= 2 && $args[1] >= $args[0];
+                
+            case 'assertLessThan':
+                return count($args) >= 2 && $args[1] < $args[0];
+                
+            case 'assertLessThanOrEqual':
+                return count($args) >= 2 && $args[1] <= $args[0];
+                
+            case 'assertInstanceOf':
+                if (count($args) >= 2) {
+                    $expectedClass = $args[0];
+                    $actualObject = $args[1];
+                    
+                    // Handle "::class" syntax
+                    if (is_string($expectedClass) && str_ends_with($expectedClass, '::class')) {
+                        $expectedClass = str_replace('::class', '', $expectedClass);
+                    }
+                    
+                    return $actualObject instanceof $expectedClass;
+                }
+                return false;
+                
+            case 'assertCount':
+                return count($args) >= 2 && count($args[1]) === $args[0];
+                
+            case 'assertStringContains':
+                return count($args) >= 2 && str_contains($args[1], $args[0]);
+                
+            case 'assertStringNotContains':
+                return count($args) >= 2 && !str_contains($args[1], $args[0]);
+                
+            case 'assertArrayHasKey':
+                return count($args) >= 2 && array_key_exists($args[0], $args[1]);
+                
+            case 'assertArrayNotHasKey':
+                return count($args) >= 2 && !array_key_exists($args[0], $args[1]);
+                
+            default:
+                // Unknown assertion method
+                return false;
         }
     }
     

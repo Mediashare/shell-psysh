@@ -55,9 +55,9 @@ class PHPUnitCallOriginalCommand extends \Psy\Extended\Command\BaseCommand
             $output->writeln($this->formatInfo("📋 Expression: {$expression}"));
             
             // Ajouter au test courant si disponible
-            $currentTest = $this->getCurrentTest();
+            $service = $this->phpunit();
+            $currentTest = $service->getCurrentTest()?->getTestClassName();
             if ($currentTest) {
-                $service = $this->phpunit();
                 $service->addCodeToTest($currentTest, $originalCallCode);
                 $output->writeln($this->formatInfo("📝 Configuration ajoutée au test {$currentTest}"));
             }

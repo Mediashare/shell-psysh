@@ -67,9 +67,9 @@ class PHPUnitService
         }
     }
 
-    public function addMethodToTest(string $methodName, ?string $testName): void 
+    public function addMethodToTest(string $testName, string $methodName): void 
     {
-        $this->getCurrentTest()->addMethod($methodName);
+        $this->getTest($testName)->addMethod($methodName);
     }
     
     /**
@@ -275,6 +275,7 @@ class PHPUnitService
      */
     public function addCodeToTest($testNameOrCode, ?string $code = null): bool
     {
+        dump($testNameOrCode, $code);
         // Handle both signatures: (testName, code) or just (code)
         if ($code === null) {
             // Single parameter - use current test
@@ -284,6 +285,8 @@ class PHPUnitService
             // Two parameters - specific test
             $test = $this->getTest($testNameOrCode);
         }
+
+        dump($test);
         
         if ($test) {
             $test->addCodeLine($code);

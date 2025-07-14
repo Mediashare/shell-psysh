@@ -16,6 +16,8 @@ class PHPUnitAssertCommand extends \Psy\Extended\Command\BaseCommand
     use PHPUnitCommandTrait;
     use RawExpressionTrait;
 
+    private ?bool $debug = false;
+
     public function __construct()
     {
         parent::__construct('phpunit:assert');
@@ -28,7 +30,8 @@ class PHPUnitAssertCommand extends \Psy\Extended\Command\BaseCommand
             ->addArgument('expression', InputArgument::REQUIRED, 'Expression à tester (ex: $invoice->getTotal() == 100)')
             ->addOption('message', 'm', InputOption::VALUE_OPTIONAL, 'Message personnalisé en cas d\'échec')
             ->addOption('method', null, InputOption::VALUE_OPTIONAL, 'Méthode de test spécifique où ajouter l\'assertion')
-            ->addOption('setup', null, InputOption::VALUE_OPTIONAL, 'Code de configuration à exécuter avant l\'assertion');
+            ->addOption('setup', null, InputOption::VALUE_OPTIONAL, 'Code de configuration à exécuter avant l\'assertion')
+            ->addOption('debug', 'd', InputOption::VALUE_NONE, 'Activer le mode debug pour la synchronisation');
     }
 
     /**
@@ -118,6 +121,23 @@ class PHPUnitAssertCommand extends \Psy\Extended\Command\BaseCommand
         $methodName = $input->getOption('method');
         $setupCode = $input->getOption('setup');
         
+        // Activer le mode debug si demandé
+        $this->debug = $input->getOption('debug');
+        if ($this->debug) {
+            $unifiedSync = $GLOBALS['psysh_unified_sync_service'] ?? null;
+            if ($unifiedSync && $unifiedSync instanceof \Psy\Extended\Service\UnifiedSyncService) {
+                $unifiedSync->setDebug(true);
+                $output->writeln($this->formatInfo("Mode debug activé pour la synchronisation"));
+            }
+            
+            // Vérifier le test courant
+            $service = $this->phpunit();
+            $currentTest = $service->getCurrentTest()?->getTestClassName();
+            if ($currentTest) {
+                $this->displayDebugInfo($expression, $currentTest);
+            }
+        }
+        
         try {
             // Préparer les variables du contexte
             $variables = [];
@@ -187,7 +207,9 @@ class PHPUnitAssertCommand extends \Psy\Extended\Command\BaseCommand
             if ($success) {
                 $output->writeln($this->formatSuccess("Assertion réussie"));
                 
-                // Ajouter l'assertion au test courant
+                // Ajouter l'assertion au test courant pour persistence
+                $this->addAssertionToCurrentTest($expression, $customMessage);
+                
                 if ($methodName) {
                     $output->writeln($this->formatInfo("Assertion ajoutée au test {$methodName}"));
                 }
@@ -302,5 +324,223 @@ class PHPUnitAssertCommand extends \Psy\Extended\Command\BaseCommand
         } else {
             return (string) $value;
         }
+    }
+    
+    /**
+     * Display debug information for assertions
+     */
+    private function displayDebugInfo(string $expression, string $testFile): void
+    {
+        echo "\n" . str_repeat('=', 80) . "\n";
+        echo "🐛 MODE DEBUG - PHPUnit Assert Command\n";
+        echo str_repeat('=', 80) . "\n";
+        
+        // Informations sur l'expression
+        echo "📝 Expression: $expression\n";
+        echo "📄 Test actuel: $testFile\n";
+        echo "📍 Mode code: " . ($this->isCodeMode() ? 'ACTIVÉ' : 'DÉSACTIVÉ') . "\n";
+        
+        // Informations sur les variables disponibles
+        $mainShellContext = $this->getMainShellContext();
+        $codeContext = $GLOBALS['phpunit_code_context'] ?? [];
+        $shellVariables = $GLOBALS['psysh_shell_variables'] ?? [];
+        
+        echo "\n📊 CONTEXTE VARIABLES:\n";
+        echo "   - Variables shell principal: " . count($mainShellContext) . "\n";
+        echo "   - Variables contexte code: " . count($codeContext) . "\n";
+        echo "   - Variables shell globales: " . count($shellVariables) . "\n";
+        
+        // Fusionner et afficher les variables
+        $allVars = array_merge($shellVariables, $codeContext, $mainShellContext);
+        
+        if (!empty($allVars)) {
+            echo "\n📋 VARIABLES DISPONIBLES POUR L'ASSERTION:\n";
+            foreach ($allVars as $name => $value) {
+                $type = gettype($value);
+                $preview = $this->getVariablePreview($value);
+                echo "   - \$$name ($type): $preview\n";
+            }
+        }
+        
+        // Analyser l'expression pour détecter les variables utilisées
+        $usedVars = $this->extractVariablesFromExpression($expression);
+        if (!empty($usedVars)) {
+            echo "\n🔍 VARIABLES UTILISÉES DANS L'EXPRESSION:\n";
+            foreach ($usedVars as $varName) {
+                $varExists = isset($allVars[$varName]);
+                $status = $varExists ? '✅ DISPONIBLE' : '❌ MANQUANTE';
+                echo "   - \$$varName: $status\n";
+                if ($varExists) {
+                    $type = gettype($allVars[$varName]);
+                    $preview = $this->getVariablePreview($allVars[$varName]);
+                    echo "     Valeur: $preview ($type)\n";
+                }
+            }
+        }
+        
+        // Informations sur les services
+        echo "\n🔧 SERVICES DISPONIBLES:\n";
+        $unifiedSync = $GLOBALS['psysh_unified_sync_service'] ?? null;
+        echo "   - Service synchronisation unifié: " . ($unifiedSync ? 'DISPONIBLE' : 'INDISPONIBLE') . "\n";
+        
+        $syncService = $GLOBALS['psysh_shell_sync_service'] ?? null;
+        echo "   - Service synchronisation shell: " . ($syncService ? 'DISPONIBLE' : 'INDISPONIBLE') . "\n";
+        
+        // Informations sur le test
+        $phpunit = $this->phpunit();
+        $test = $phpunit->getTest($testFile);
+        
+        if ($test) {
+            $codeLines = $test->getCodeLines();
+            $assertionLines = $test->getAssertions();
+            echo "\n🧪 INFORMATIONS SUR LE TEST:\n";
+            echo "   - Lignes de code existantes: " . count($codeLines) . "\n";
+            echo "   - Assertions existantes: " . count($assertionLines) . "\n";
+            
+            if (!empty($assertionLines)) {
+                echo "   - Aperçu des assertions existantes:\n";
+                foreach (array_slice($assertionLines, 0, 3) as $i => $line) {
+                    echo "     " . ($i + 1) . ": $line\n";
+                }
+                if (count($assertionLines) > 3) {
+                    echo "     ... (" . (count($assertionLines) - 3) . " assertions supplémentaires)\n";
+                }
+            }
+        }
+        
+        echo str_repeat('=', 80) . "\n\n";
+    }
+    
+    /**
+     * Extract variables from an expression
+     */
+    private function extractVariablesFromExpression(string $expression): array
+    {
+        $variables = [];
+        // Chercher les variables PHP (\$variableName)
+        if (preg_match_all('/\$([a-zA-Z_][a-zA-Z0-9_]*)/', $expression, $matches)) {
+            $variables = array_unique($matches[1]);
+        }
+        return $variables;
+    }
+    
+    /**
+     * Add assertion to the current test for persistence
+     */
+    private function addAssertionToCurrentTest(string $expression, ?string $message): void
+    {
+        try {
+            $service = $this->phpunit();
+            $currentTest = $service->getCurrentTest();
+            
+            if (!$currentTest) {
+                // Pas de test actuel, pas d'erreur mais on ne peut pas persister
+                return;
+            }
+            
+            // Convertir l'expression en assertion PHPUnit
+            $phpunitAssertion = $this->convertToPhpUnitAssertion($expression);
+            
+            // Ajouter l'assertion au test
+            $currentTest->addAssertion($phpunitAssertion);
+            
+            if ($this->debug) {
+                echo "📋 Assertion ajoutée au test: $phpunitAssertion\n";
+            }
+            
+        } catch (\Exception $e) {
+            if ($this->debug) {
+                echo "⚠️  Erreur lors de l'ajout de l'assertion au test: " . $e->getMessage() . "\n";
+            }
+        }
+    }
+    
+    /**
+     * Convert raw expression to PHPUnit assertion
+     */
+    private function convertToPhpUnitAssertion(string $expr): string
+    {
+        // Trim whitespace
+        $expr = trim($expr);
+        
+        // Check for instanceof
+        if (preg_match('/^(.+?)\s+instanceof\s+(.+)$/i', $expr, $matches)) {
+            $object = trim($matches[1]);
+            $class = trim($matches[2]);
+            return "assertInstanceOf({$class}::class, {$object})";
+        }
+        
+        // Check for === (identity)
+        if (preg_match('/^(.+?)\s*===\s*(.+)$/', $expr, $matches)) {
+            $left = trim($matches[1]);
+            $right = trim($matches[2]);
+            
+            // Special case for null
+            if ($right === 'null') {
+                return "assertNull({$left})";
+            }
+            if ($left === 'null') {
+                return "assertNull({$right})";
+            }
+            
+            // Special case for true/false
+            if ($right === 'true') {
+                return "assertTrue({$left})";
+            }
+            if ($right === 'false') {
+                return "assertFalse({$left})";
+            }
+            
+            return "assertSame({$right}, {$left})";
+        }
+        
+        // Check for == (equality)
+        if (preg_match('/^(.+?)\s*==\s*(.+)$/', $expr, $matches)) {
+            $left = trim($matches[1]);
+            $right = trim($matches[2]);
+            return "assertEquals({$right}, {$left})";
+        }
+        
+        // Check for != or !==
+        if (preg_match('/^(.+?)\s*!==?\s*(.+)$/', $expr, $matches)) {
+            $left = trim($matches[1]);
+            $right = trim($matches[2]);
+            return "assertNotEquals({$right}, {$left})";
+        }
+        
+        // Check for > or <
+        if (preg_match('/^(.+?)\s*>\s*(.+)$/', $expr, $matches)) {
+            $left = trim($matches[1]);
+            $right = trim($matches[2]);
+            return "assertGreaterThan({$right}, {$left})";
+        }
+        
+        if (preg_match('/^(.+?)\s*<\s*(.+)$/', $expr, $matches)) {
+            $left = trim($matches[1]);
+            $right = trim($matches[2]);
+            return "assertLessThan({$right}, {$left})";
+        }
+        
+        // Check for >= or <=
+        if (preg_match('/^(.+?)\s*>=\s*(.+)$/', $expr, $matches)) {
+            $left = trim($matches[1]);
+            $right = trim($matches[2]);
+            return "assertGreaterThanOrEqual({$right}, {$left})";
+        }
+        
+        if (preg_match('/^(.+?)\s*<=\s*(.+)$/', $expr, $matches)) {
+            $left = trim($matches[1]);
+            $right = trim($matches[2]);
+            return "assertLessThanOrEqual({$right}, {$left})";
+        }
+        
+        // Check for negation
+        if (preg_match('/^!(.+)$/', $expr, $matches)) {
+            $inner = trim($matches[1]);
+            return "assertFalse({$inner})";
+        }
+        
+        // Default: treat as boolean assertion
+        return "assertTrue({$expr})";
     }
 }
