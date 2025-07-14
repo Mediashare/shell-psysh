@@ -24,7 +24,8 @@ source "$FUNC_DIR/parse_test_args.sh"
 # Note: test_execute.sh has a conflicting implementation with unified_test_executor.sh
 # We use the unified version which has all the needed functions
 # source "$FUNC_DIR/test_execute.sh"
-source "$FUNC_DIR/test_session_sync.sh"
+# source "$FUNC_DIR/test_session_sync.sh"
+source "$FUNC_DIR/test_session_sync_enhanced.sh"
 
 # Variables globales pour le test
 TEST_COUNT=0

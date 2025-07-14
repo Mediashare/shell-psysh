@@ -39,12 +39,8 @@ test_phpunit "Test phpunit simple" \
     "Assertion réussie"
 
 # Test 5: Test avec retry
-# test_execute "Assert avec retry" \
-#     "\$result = true; phpunit:assert '\$result === true'" \
-#     "Assertion réussie" \
-#     --context=phpunit --retry=2 --timeout=10
 test_session_sync "Assert avec retry" \
-   --step '$result = 42' --context 'psysh' --expect '42'\
+   --step '$result = 42' --context 'psysh' --expect '42' \
    --step "phpunit:assert '$result === 42'" --context 'phpunit' --expect "Assertion réussie" \
    --retry=2 --timeout=10
 
