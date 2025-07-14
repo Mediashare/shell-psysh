@@ -90,7 +90,7 @@ class PHPUnitAddCommand extends \Psy\Extended\Command\BaseCommand
         }
         
         $service = $this->phpunit();
-        $service->addMethodToTest($currentTest, $methodName);
+        $service->addMethodToTest($methodName, $currentTest);
         
         $output->writeln($this->formatSuccess("Méthode {$methodName} ajoutée"));
         

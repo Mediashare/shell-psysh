@@ -6,7 +6,6 @@ use Psy\Extended\Service\CommandServiceManager;
 
 /**
  * Trait PHPUnit compatible avec l'ancienne et nouvelle architecture
- * @deprecated Utilisez ServiceAwareTrait et BaseCommand à la place
  */
 trait PHPUnitCommandTrait
 {
@@ -98,9 +97,10 @@ trait PHPUnitCommandTrait
     protected function executePhpCode(string $code): mixed
     {
         try {
-            // Récupérer les variables du shell via le service de synchronisation
+            // Synchroniser automatiquement les variables avant l'exécution
             $syncService = $GLOBALS['psysh_shell_sync_service'] ?? null;
             if ($syncService && $syncService instanceof \Psy\Extended\Service\ShellSyncService) {
+                $syncService->autoSync();
                 $shellVariables = $syncService->getMainShellVariables();
             } else {
                 $shellVariables = $GLOBALS['psysh_shell_variables'] ?? [];
@@ -399,7 +399,7 @@ trait PHPUnitCommandTrait
         
         // Priorité 2: Utiliser le service de synchronisation si disponible
         $syncService = $GLOBALS['psysh_shell_sync_service'] ?? null;
-        if ($syncService && $syncService instanceof \Mediashare\Psysh\Service\ShellSyncService) {
+        if ($syncService && $syncService instanceof \Psy\Extended\Service\ShellSyncService) {
             return $syncService->getMainShellVariables();
         }
         
@@ -437,7 +437,7 @@ trait PHPUnitCommandTrait
         try {
             // Utiliser le service de synchronisation si disponible
             $syncService = $GLOBALS['psysh_shell_sync_service'] ?? null;
-            if ($syncService && $syncService instanceof \Mediashare\Psysh\Service\ShellSyncService) {
+            if ($syncService && $syncService instanceof \Psy\Extended\Service\ShellSyncService) {
                 $success = $syncService->syncToMainShell($variables);
                 if ($success) {
                     echo "✅ Variables synchronisées avec le shell principal\n";

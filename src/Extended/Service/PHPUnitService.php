@@ -66,6 +66,11 @@ class PHPUnitService
             $this->currentTest = $testName;
         }
     }
+
+    public function addMethodToTest(string $methodName, ?string $testName): void 
+    {
+        $this->getCurrentTest()->addMethod($methodName);
+    }
     
     /**
      * List all tests
@@ -73,6 +78,61 @@ class PHPUnitService
     public function listTests(): array
     {
         return $this->tests;
+    }
+    
+    /**
+     * Get active tests (alias for listTests for backward compatibility)
+     */
+    public function getActiveTests(): array
+    {
+        return $this->tests;
+    }
+    
+    /**
+     * Run a test by name
+     */
+    public function runTest(string $testName): array
+    {
+        $test = $this->getTest($testName);
+        if (!$test) {
+            return [
+                'success' => false,
+                'errors' => ["Test '{$testName}' not found"]
+            ];
+        }
+        
+        $errors = [];
+        $success = true;
+        
+        try {
+            // Execute code lines
+            foreach ($test->getCodeLines() as $line) {
+                $result = eval($line);
+                // Check if there were any errors
+                if ($result === false && error_get_last()) {
+                    $errors[] = "Error executing line: {$line}";
+                    $success = false;
+                }
+            }
+            
+            // Execute assertions
+            foreach ($test->getAssertions() as $assertion) {
+                $result = eval("return {$assertion};");
+                if (!$result) {
+                    $errors[] = "Assertion failed: {$assertion}";
+                    $success = false;
+                }
+            }
+            
+        } catch (\Throwable $e) {
+            $errors[] = "Exception: " . $e->getMessage();
+            $success = false;
+        }
+        
+        return [
+            'success' => $success,
+            'errors' => $errors
+        ];
     }
     
     /**
