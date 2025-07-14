@@ -223,6 +223,62 @@ class Shell extends Application
             $sudo,
             $hist,
             new Command\ExitCommand(),
+            
+            // Extended commands
+            new \Psy\Extended\Command\AutoloadCommand(),
+            new \Psy\Extended\Command\PHPUnit\CreateCommand(),
+            new \Psy\Extended\Command\PHPUnit\AssertCommand(),
+            
+            // Snapshot commands
+            new \Psy\Extended\Command\Snapshot\PHPUnitSaveSnapshotCommand(),
+            new \Psy\Extended\Command\Snapshot\PHPUnitSnapshotCommand(),
+            
+            // Config commands
+            new \Psy\Extended\Command\Config\PHPUnitCodeCommand(),
+            new \Psy\Extended\Command\Config\PHPUnitListProjectCommand(),
+            new \Psy\Extended\Command\Config\CustomHelpCommand(),
+            new \Psy\Extended\Command\Config\PHPUnitCreateCommand(),
+            new \Psy\Extended\Command\Config\PHPUnitListCommand(),
+            new \Psy\Extended\Command\Config\PHPUnitConfigCommand(),
+            new \Psy\Extended\Command\Config\PHPUnitHelpCommand(),
+            new \Psy\Extended\Command\Config\PHPUnitTempConfigCommand(),
+            new \Psy\Extended\Command\Config\PHPUnitRestoreConfigCommand(),
+            new \Psy\Extended\Command\Config\PHPUnitExportCommand(),
+            
+            // Runner commands
+            new \Psy\Extended\Command\Runner\PHPUnitRunAllCommand(),
+            new \Psy\Extended\Command\Runner\PHPUnitRunProjectCommand(),
+            new \Psy\Extended\Command\Runner\TestParamsCommand(),
+            new \Psy\Extended\Command\Runner\PHPUnitRunCommand(),
+            new \Psy\Extended\Command\Runner\PHPUnitWatchCommand(),
+            new \Psy\Extended\Command\Runner\PHPUnitDebugCommand(),
+            new \Psy\Extended\Command\Runner\PHPUnitTraceCommand(),
+            new \Psy\Extended\Command\Runner\PsyshMonitorCommand(),
+            new \Psy\Extended\Command\Runner\PHPUnitExplainCommand(),
+            new \Psy\Extended\Command\Runner\PHPUnitProfileCommand(),
+            new \Psy\Extended\Command\Runner\PHPUnitMonitorCommand(),
+            
+            // Mock commands
+            new \Psy\Extended\Command\Mock\PHPUnitPartialMockCommand(),
+            new \Psy\Extended\Command\Mock\PHPUnitMockCommand(),
+            new \Psy\Extended\Command\Mock\PHPUnitSpyCommand(),
+            
+            // Other commands
+            new \Psy\Extended\Command\Other\PHPUnitEvalCommand(),
+            new \Psy\Extended\Command\Other\PHPUnitExpectCommand(),
+            new \Psy\Extended\Command\Other\PHPUnitVerifyCommand(),
+            new \Psy\Extended\Command\Other\PHPUnitAddCommand(),
+            new \Psy\Extended\Command\Other\PHPUnitCallOriginalCommand(),
+            
+            // Assert commands
+            new \Psy\Extended\Command\Assert\PHPUnitAssertCommand(),
+            new \Psy\Extended\Command\Assert\PHPUnitAssertEqualsCommand(),
+            new \Psy\Extended\Command\Assert\PHPUnitTypedAssertCommand(),
+            
+            // Performance commands
+            new \Psy\Extended\Command\Performance\PHPUnitCompareCommand(),
+            new \Psy\Extended\Command\Performance\PHPUnitComparePerformanceCommand(),
+            new \Psy\Extended\Command\Performance\PHPUnitBenchmarkCommand(),
         ];
     }
 

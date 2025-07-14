@@ -30,6 +30,7 @@
     "autoload": {
         "files": ["src/functions.php"],
         "psr-4": {
+            "Psy\\Extended\\": "src/Extended/",
             "Psy\\": "src/"
         }
     },

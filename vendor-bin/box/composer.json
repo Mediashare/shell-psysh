@@ -1,6 +1,7 @@
 {
     "require": {
-        "humbug/box": "^3.16.0",
-        "jetbrains/phpstorm-stubs": "@dev"
+        "humbug/box": "^4.0",
+        "jetbrains/phpstorm-stubs": "@dev",
+        "thecodingmachine/safe": "^2.5"
     }
 }

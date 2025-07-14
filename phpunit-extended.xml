@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit 
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
+    bootstrap="vendor/autoload.php"
+    colors="true"
+    convertErrorsToExceptions="true"
+    convertNoticesToExceptions="true"
+    convertWarningsToExceptions="true"
+    stopOnFailure="false"
+    executionOrder="random"
+    resolveDependencies="true"
+    beStrictAboutOutputDuringTests="true"
+    beStrictAboutTestsThatDoNotTestAnything="true"
+    beStrictAboutTodoAnnotatedTests="true"
+>
+    <testsuites>
+        <testsuite name="Extended Commands">
+            <directory>test/Extended/Command</directory>
+        </testsuite>
+        <testsuite name="Extended Services">
+            <directory>test/Extended/Service</directory>
+        </testsuite>
+        <testsuite name="All Extended">
+            <directory>test/Extended</directory>
+        </testsuite>
+    </testsuites>
+
+    <coverage>
+        <include>
+            <directory suffix=".php">src/Extended</directory>
+        </include>
+        <exclude>
+            <directory>src/Extended/Model</directory>
+        </exclude>
+    </coverage>
+
+    <php>
+        <ini name="error_reporting" value="-1" />
+        <ini name="memory_limit" value="-1" />
+    </php>
+</phpunit>
