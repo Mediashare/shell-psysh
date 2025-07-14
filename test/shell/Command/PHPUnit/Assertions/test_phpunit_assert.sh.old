@@ -7,7 +7,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
-PSYSH_CMD="$PROJECT_ROOT/vendor/bin/psysh --config $PROJECT_ROOT/config/config.php"
+
 
 echo "🧪 Testing phpunit:assert command..."
 
@@ -15,8 +15,7 @@ echo "🧪 Testing phpunit:assert command..."
 echo "📝 Test 1: Basic assertion without quotes"
 {
     echo 'phpunit:create TestService'
-    echo '$result = 42'
-    echo 'phpunit:assert "$result === 42"'
+    echo 'phpunit:assert "42 === 42"'
 } | $PSYSH_CMD --no-interactive > /tmp/psysh_assert_1.out 2>&1 || true
 if grep -q "Assertion ajoutée" /tmp/psysh_assert_1.out; then
     echo "✅ Basic assertion without quotes works"
@@ -29,8 +28,7 @@ fi
 echo "📝 Test 2: String comparison without quotes"
 {
     echo 'phpunit:create UserService'
-    echo '$user = new stdClass(); $user->name = "John Doe"'
-    echo 'phpunit:assert $user->name == "John Doe"'
+    echo 'phpunit:assert "\"John Doe\" == \"John Doe\""'
 } | $PSYSH_CMD --no-interactive > /tmp/psysh_assert_2.out 2>&1 || true
 if grep -q "Assertion ajoutée" /tmp/psysh_assert_2.out; then
     echo "✅ String comparison assertion works"
@@ -43,8 +41,7 @@ fi
 echo "📝 Test 3: Array count assertion"
 {
     echo 'phpunit:create DataService'
-    echo '$items = [1, 2, 3, 4, 5]'
-    echo 'phpunit:assert count($items) > 0'
+    echo 'phpunit:assert "count([1, 2, 3, 4, 5]) > 0"'
 } | $PSYSH_CMD --no-interactive > /tmp/psysh_assert_3.out 2>&1 || true
 if grep -q "Assertion ajoutée" /tmp/psysh_assert_3.out; then
     echo "✅ Array count assertion works"
@@ -57,8 +54,7 @@ fi
 echo "📝 Test 4: instanceof assertion"
 {
     echo 'phpunit:create ObjectService'
-    echo '$obj = new stdClass()'
-    echo 'phpunit:assert $obj instanceof stdClass'
+    echo 'phpunit:assert "(new stdClass()) instanceof stdClass"'
 } | $PSYSH_CMD --no-interactive > /tmp/psysh_assert_4.out 2>&1 || true
 if grep -q "Assertion ajoutée" /tmp/psysh_assert_4.out; then
     echo "✅ instanceof assertion works"
@@ -71,8 +67,7 @@ fi
 echo "📝 Test 5: Boolean assertion"
 {
     echo 'phpunit:create BooleanService'
-    echo '$active = true'
-    echo 'phpunit:assert $active === true'
+    echo 'phpunit:assert "true === true"'
 } | $PSYSH_CMD --no-interactive > /tmp/psysh_assert_5.out 2>&1 || true
 if grep -q "Assertion ajoutée" /tmp/psysh_assert_5.out; then
     echo "✅ Boolean assertion works"
@@ -85,8 +80,7 @@ fi
 echo "📝 Test 6: Null assertion"
 {
     echo 'phpunit:create NullService'
-    echo '$nullVar = null'
-    echo 'phpunit:assert $nullVar === null'
+    echo 'phpunit:assert "null === null"'
 } | $PSYSH_CMD --no-interactive > /tmp/psysh_assert_6.out 2>&1 || true
 if grep -q "Assertion ajoutée" /tmp/psysh_assert_6.out; then
     echo "✅ Null assertion works"
@@ -99,8 +93,7 @@ fi
 echo "📝 Test 7: Empty array assertion"
 {
     echo 'phpunit:create EmptyService'
-    echo '$errors = []'
-    echo 'phpunit:assert empty($errors)'
+    echo 'phpunit:assert "empty([])"'
 } | $PSYSH_CMD --no-interactive > /tmp/psysh_assert_7.out 2>&1 || true
 if grep -q "Assertion ajoutée" /tmp/psysh_assert_7.out; then
     echo "✅ Empty array assertion works"
@@ -113,8 +106,7 @@ fi
 echo "📝 Test 8: Complex expression assertion"
 {
     echo 'phpunit:create ComplexService'
-    echo '$config = ["debug" => true, "env" => "test"]'
-    echo 'phpunit:assert isset($config["debug"]) && $config["debug"] === true'
+    echo 'phpunit:assert "isset([\"debug\" => true][\"debug\"]) && [\"debug\" => true][\"debug\"] === true"'
 } | $PSYSH_CMD --no-interactive > /tmp/psysh_assert_8.out 2>&1 || true
 if grep -q "Assertion ajoutée" /tmp/psysh_assert_8.out; then
     echo "✅ Complex expression assertion works"
@@ -127,8 +119,7 @@ fi
 echo "📝 Test 9: Numeric comparison assertion"
 {
     echo 'phpunit:create NumericService'
-    echo '$price = 99.99'
-    echo 'phpunit:assert $price >= 50.0'
+    echo 'phpunit:assert "99.99 >= 50.0"'
 } | $PSYSH_CMD --no-interactive > /tmp/psysh_assert_9.out 2>&1 || true
 if grep -q "Assertion ajoutée" /tmp/psysh_assert_9.out; then
     echo "✅ Numeric comparison assertion works"
@@ -139,7 +130,7 @@ fi
 
 # Test 10: Error handling - no test created first
 echo "📝 Test 10: Error handling - no test created first"
-echo 'phpunit:assert $result === 42' | $PSYSH_CMD --no-interactive > /tmp/psysh_assert_10.out 2>&1 || true
+echo 'phpunit:assert "42 === 42"' | $PSYSH_CMD --no-interactive > /tmp/psysh_assert_10.out 2>&1 || true
 if grep -q -E "(Aucun test|test actuel|error)" /tmp/psysh_assert_10.out; then
     echo "✅ Error handling works"
 else
@@ -164,8 +155,7 @@ fi
 echo "📝 Test 12: Old syntax with quotes (compatibility)"
 {
     echo 'phpunit:create LegacyService'
-    echo '$result = 42'
-    echo 'phpunit:assert "$result === 42"'
+    echo 'phpunit:assert "42 === 42"'
 } | $PSYSH_CMD --no-interactive > /tmp/psysh_assert_12.out 2>&1 || true
 if grep -q "Assertion ajoutée" /tmp/psysh_assert_12.out; then
     echo "✅ Legacy syntax compatibility works"

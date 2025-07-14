@@ -4,7 +4,7 @@
 # Tests PHPUnitConfigCommand, PHPUnitCreateCommand, PHPUnitExportCommand, etc.
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-source "$SCRIPT_DIR/../../lib/test_utils.sh"
+source "$SCRIPT_DIR/../../lib/func/loader.sh"
 
 # Vérifier que PROJECT_ROOT est défini
 if [[ -z "$PROJECT_ROOT" ]]; then

@@ -19,7 +19,7 @@ class PsyshMonitorCommand extends BaseCommand
             ->setName('monitor')
             ->setAliases(['mon', 'watch'])
             ->setDescription('Monitor code execution with real-time metrics')
-            ->addArgument('code', InputArgument::OPTIONAL, 'PHP code to monitor')
+            ->addArgument('code', InputArgument::IS_ARRAY | InputArgument::OPTIONAL, 'PHP code to monitor')
             ->addOption('time', 't', InputOption::VALUE_NONE, 'Show execution time')
             ->addOption('memory', 'm', InputOption::VALUE_NONE, 'Show memory usage')
             ->addOption('vars', 'v', InputOption::VALUE_NONE, 'Show variable changes')
@@ -28,11 +28,20 @@ class PsyshMonitorCommand extends BaseCommand
     
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $code = $input->getArgument('code');
+        $codeArray = $input->getArgument('code');
         
-        if (!$code) {
+        if (empty($codeArray)) {
             $output->writeln('<comment>Enter code to monitor (end with <<<):</comment>');
             $code = $this->readMultilineInput($output);
+        } else {
+            // Join multiple arguments back into a single code string
+            // Ensure $codeArray is actually an array before imploding
+            if (is_array($codeArray)) {
+                $code = implode(' ', $codeArray);
+            } else {
+                // If it's a string, use it directly
+                $code = (string) $codeArray;
+            }
         }
         
         // Get initial state

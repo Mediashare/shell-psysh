@@ -1,19 +1,17 @@
 #!/bin/bash
 
-# Script pour exécuter les tests PsySH Enhanced
-# Supporte plusieurs types de commandes et modes d'exécution
-
-# Couleurs pour l'affichage
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-PURPLE='\033[0;35m'
-CYAN='\033[0;36m'
-NC='\033[0m' # No Color
+# Script principal pour exécuter les tests PsySH Enhanced
+# Architecture modulaire avec séparation des responsabilités
 
 # Obtenir le répertoire du script
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# Charger la configuration et les utilitaires
+source "$SCRIPT_DIR/config.sh"
+source "$SCRIPT_DIR/lib/display_utils.sh"
+source "$SCRIPT_DIR/lib/unified_test_executor.sh"
+source "$SCRIPT_DIR/lib/psysh_utils.sh"
+source "$SCRIPT_DIR/lib/timeout_handler.sh"
 
 # Revenir au répertoire des tests
 cd "$SCRIPT_DIR"
@@ -91,6 +89,95 @@ wait_for_action() {
     return 0  # Enter or other key pressed
 }
 
+# Fonction pour générer une stack trace shell en analysant l'exécution
+generate_shell_stack_trace() {
+    local temp_output=$1
+    local main_test_file=$2
+    
+    echo -e "   ${PURPLE}📂 Fichiers impliqués dans l'exécution:${NC}"
+    
+    # 1. Fichier de test principal
+    echo -e "   ${CYAN}├─ ${main_test_file}${NC} (Point d'entrée)"
+    
+    # 2. Chercher les sources/includes dans les logs
+    local sourced_files=$(grep -E "(source|\.|Loading|Sourcing)" "$temp_output" | grep -E "\.sh|\.bash" | head -5)
+    if [[ -n "$sourced_files" ]]; then
+        echo "$sourced_files" | while IFS= read -r line; do
+            local file_path=$(echo "$line" | sed -E 's/.*([a-zA-Z0-9_\/\.-]*\.sh).*/\1/')
+            if [[ -n "$file_path" && "$file_path" != "$line" ]]; then
+                echo -e "   ${CYAN}├─ $file_path${NC} (Sourcé/Inclus)"
+            fi
+        done
+    fi
+    
+    # 3. Analyser la structure des fichiers shell réellement utilisés
+    echo -e "\n   ${PURPLE}🔍 Analyse des fichiers shell détectés:${NC}"
+    
+    # Analyser le fichier de test principal
+    if [[ -f "$main_test_file" ]]; then
+        analyze_shell_file "$main_test_file" "$temp_output"
+    fi
+    
+    # Analyser les fichiers lib/ si détectés
+    local lib_files=$(find "$(dirname "$main_test_file")/../../lib" -name "*.sh" 2>/dev/null | head -3)
+    if [[ -n "$lib_files" ]]; then
+        echo "$lib_files" | while IFS= read -r lib_file; do
+            if [[ -f "$lib_file" ]]; then
+                analyze_shell_file "$lib_file" "$temp_output"
+            fi
+        done
+    fi
+    
+    # 4. Chercher des traces spécifiques dans les logs debug
+    echo -e "\n   ${PURPLE}🎯 Trace d'exécution basée sur les logs:${NC}"
+    local debug_traces=$(grep -n -E "(\[DEBUG\]|Etape [0-9]+|test_execute|monitor|phpunit:assert)" "$temp_output" | head -10)
+    if [[ -n "$debug_traces" ]]; then
+        echo "$debug_traces" | while IFS= read -r trace_line; do
+            local line_num=$(echo "$trace_line" | cut -d: -f1)
+            local content=$(echo "$trace_line" | cut -d: -f2- | sed 's/^[[:space:]]*//')
+            echo -e "   ${YELLOW}   Line $line_num: ${NC}$content"
+        done
+    fi
+}
+
+# Fonction pour analyser un fichier shell spécifique
+analyze_shell_file() {
+    local file_path=$1
+    local temp_output=$2
+    local file_name=$(basename "$file_path")
+    
+    echo -e "   ${BLUE}📄 $file_name${NC}"
+    
+    # Chercher les fonctions définies dans ce fichier
+    if [[ -f "$file_path" ]]; then
+        local functions=$(grep -n "^[a-zA-Z_][a-zA-Z0-9_]*()" "$file_path" | head -5)
+        if [[ -n "$functions" ]]; then
+            echo "$functions" | while IFS= read -r func_line; do
+                local line_num=$(echo "$func_line" | cut -d: -f1)
+                local func_name=$(echo "$func_line" | cut -d: -f2 | sed 's/()[[:space:]]*{.*//' | sed 's/^[[:space:]]*//')
+                
+                # Vérifier si cette fonction apparaît dans les logs
+                if grep -q "$func_name" "$temp_output" 2>/dev/null; then
+                    echo -e "   ${GREEN}   ✓ $func_name() [ligne $line_num] - UTILISÉE${NC}"
+                else
+                    echo -e "   ${CYAN}   - $func_name() [ligne $line_num]${NC}"
+                fi
+            done
+        fi
+        
+        # Chercher les appels source/include
+        local includes=$(grep -n "^[[:space:]]*source\|^[[:space:]]*\." "$file_path" | head -3)
+        if [[ -n "$includes" ]]; then
+            echo -e "   ${CYAN}   📥 Inclusions détectées:${NC}"
+            echo "$includes" | while IFS= read -r inc_line; do
+                local line_num=$(echo "$inc_line" | cut -d: -f1)
+                local inc_file=$(echo "$inc_line" | cut -d: -f2- | sed 's/.*["\047]\([^"\047]*\)["\047].*/\1/' | sed 's/.*[[:space:]]\([^[:space:]]*\)$/\1/')
+                echo -e "   ${CYAN}     → ligne $line_num: $inc_file${NC}"
+            done
+        fi
+    fi
+}
+
 # Fonction pour exécuter un test en mode simple
 run_test_simple() {
     local test_file=$1
@@ -121,7 +208,14 @@ run_test_simple() {
     # Extraire les statistiques des étapes pour affichage
     local step_stats=""
     if [[ -f "$temp_output" ]]; then
-        local total_steps=$(grep -c ">>> Étape|>>> Test" "$temp_output" 2>/dev/null || echo "0")
+        # Détecter à la fois l'ancien et le nouveau format des étapes
+        local total_steps_old
+        total_steps_old=$(grep -c "Etape [0-9]*:" "$temp_output" 2>/dev/null)
+        if [[ -z "$total_steps_old" ]]; then total_steps_old=0; fi
+        local total_steps_new
+        total_steps_new=$(grep -c ">>> Étape [0-9]*:" "$temp_output" 2>/dev/null)
+        if [[ -z "$total_steps_new" ]]; then total_steps_new=0; fi
+        local total_steps=$((total_steps_old + total_steps_new))
         local passed_steps=$(grep -c "✅ PASS:" "$temp_output" 2>/dev/null || echo "0")
         local failed_steps=$(grep -c "❌ FAIL:" "$temp_output" 2>/dev/null || echo "0")
         
@@ -181,16 +275,82 @@ run_test_simple() {
                 fi
             done
             
-            # Afficher les erreurs système ou PHP si présentes
+            # Afficher les erreurs système ou PHP si présentes avec leur contexte
             echo ""
-            echo -e "${RED}🚨 ERREURS DÉTECTÉES:${NC}"
+            echo -e "${RED}🚨 ERREURS DÉTECTÉES lors de l'exécution de ${YELLOW}$(basename "$test_file")${RED}:${NC}"
+            
+            # Générer une stack trace shell si possible
+            echo -e "\n${BLUE}🔍 STACK TRACE - Chemin d'exécution:${NC}"
+            generate_shell_stack_trace "$temp_output" "$test_file"
             local has_errors=false
+            local error_num=1
             while IFS= read -r line; do
                 if [[ -n "$line" ]]; then
-                    echo -e "   ${RED}💥 ${line}${NC}"
+                    # Extraire le numéro de ligne et le contenu de l'erreur
+                    local output_line_num=$(echo "$line" | cut -d: -f1)
+                    local error_content=$(echo "$line" | cut -d: -f2-)
+                    
+                    # Déterminer le type d'erreur
+                    local error_type="SHELL"
+                    local error_source="Script shell"
+                    if [[ "$error_content" =~ (syntax\ error|Parse\ error|Fatal\ error|Call\ to\ undefined) ]]; then
+                        error_type="PHP"
+                        error_source="Code PHP exécuté"
+                    fi
+                    
+                    echo -e "   ${RED}💥 [#$error_num] ${error_source} (ligne de sortie $output_line_num):${NC}"
+                    echo -e "   ${RED}   ${error_content}${NC}"
+                    
+                    # Chercher la commande qui a causé cette erreur
+                    local safe_pattern=$(echo "$error_content" | sed 's/.*RuntimeException/RuntimeException/' | sed 's/\[/\\[/g' | sed 's/\]/\\]/g' | sed 's/"/\\"/g')
+                    
+                    # Afficher le contexte autour de l'erreur dans la sortie
+                    local start_line=$((output_line_num - 3))
+                    local end_line=$((output_line_num + 3))
+                    if [[ $start_line -lt 1 ]]; then start_line=1; fi
+                    
+                    local error_context=$(sed -n "${start_line},${end_line}p" "$temp_output" 2>/dev/null | nl -v$start_line -w3 -s': ')
+                    if [[ -n "$error_context" ]]; then
+                        echo -e "   ${CYAN}🔍 Contexte de sortie (lignes $start_line-$end_line):${NC}"
+                        echo "$error_context" | while IFS= read -r context_line; do
+                            if echo "$context_line" | grep -q "$output_line_num:"; then
+                                echo -e "      ${RED}→ $context_line${NC}"  # Ligne d'erreur en rouge
+                            else
+                                echo -e "      $context_line"
+                            fi
+                        done
+                    fi
+                    
+                    # Chercher et afficher la commande PHP qui a causé l'erreur
+                    if [[ "$error_type" == "PHP" ]]; then
+                        # Rechercher la dernière commande monitor ou phpunit avant l'erreur
+                        local php_command=$(sed -n "1,${output_line_num}p" "$temp_output" | grep -E "(monitor|phpunit:assert)" | tail -1)
+                        if [[ -n "$php_command" ]]; then
+                            # Extraire juste le code PHP
+                            local clean_php=$(echo "$php_command" | sed -E 's/.*(monitor|phpunit:assert)[[:space:]]*[\"'\'']([^\"'\'']*)[\"\''].*/\2/' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+                            if [[ -n "$clean_php" && "$clean_php" != "$php_command" ]]; then
+                                echo -e "   ${YELLOW}📝 Code PHP qui a échoué: ${NC}${CYAN}$clean_php${NC}"
+                            fi
+                        fi
+                        
+                        # Chercher l'étape de test correspondante
+                        local test_step=$(sed -n "1,${output_line_num}p" "$temp_output" | grep -E ">>> Étape [0-9]+:" | tail -1)
+                        if [[ -n "$test_step" ]]; then
+                            echo -e "   ${BLUE}📋 $test_step${NC}"
+                        fi
+                    else
+                        # Pour les erreurs shell, chercher la commande associée
+                        local associated_command=$(grep -B 3 -A 1 -F "$safe_pattern" "$temp_output" 2>/dev/null | grep -E "(\\[DEBUG\\] Command:|Command:|monitor|phpunit:)" | head -1 | sed 's/.*Command: //' | sed 's/\\[DEBUG\\] Etape [0-9]\\* - //' || echo "")
+                        if [[ -n "$associated_command" ]]; then
+                            echo -e "   ${YELLOW}📝 Commande associée: ${associated_command}${NC}"
+                        fi
+                    fi
+                    
+                    echo ""  # Ligne vide entre les erreurs
                     has_errors=true
+                    ((error_num++))
                 fi
-            done < <(grep -E "(RuntimeException|PARSE ERROR|Fatal error|Warning:|Notice:|Error:|command not found|No such file)" "$temp_output" | head -3)
+            done < <(grep -n -E "(RuntimeException|PARSE ERROR|Fatal error|Warning:|Notice:|Error:|command not found|No such file)" "$temp_output" | head -3)
             
             if [[ "$has_errors" == "false" ]]; then
                 echo -e "   ${GREEN}✓ Aucune erreur système détectée${NC}"
@@ -246,7 +406,14 @@ run_test_simple() {
         
         # Vérification de cohérence : si exit_code=0 mais aucune étape réussie, signaler
         if [[ -f "$temp_output" ]]; then
-            local total_steps=$(grep -c ">>> Étape\|>>> Test" "$temp_output" 2>/dev/null || echo "0")
+            # Utiliser la même logique que plus haut pour détecter les étapes
+            local total_steps_old
+            total_steps_old=$(grep -c "Etape [0-9]*:" "$temp_output" 2>/dev/null)
+            if [[ -z "$total_steps_old" ]]; then total_steps_old=0; fi
+            local total_steps_new
+            total_steps_new=$(grep -c ">>> Étape [0-9]*:" "$temp_output" 2>/dev/null)
+            if [[ -z "$total_steps_new" ]]; then total_steps_new=0; fi
+            local total_steps=$((total_steps_old + total_steps_new))
             local passed_steps=$(grep -c "✅ PASS:" "$temp_output" 2>/dev/null || echo "0")
             local failed_steps=$(grep -c "❌ FAIL:" "$temp_output" 2>/dev/null || echo "0")
             
@@ -305,16 +472,77 @@ run_test_simple() {
                     
                     echo ""
                     echo -e "${BLUE}⚡ DERNIÈRES COMMANDES:${NC}"
-                    grep -E "(\$PSYSH_CMD|echo \"Étape|phpunit:)" "$temp_output" | tail -4 | while IFS= read -r line; do
-                        echo -e "   ${CYAN}🔧 ${line}${NC}"
-                    done
+                    
+                    # Capturer les commandes avec leurs outputs et étapes
+                    local cmd_output_temp=$(mktemp)
+                    grep -E "(\[DEBUG\] Etape|\[DEBUG\] Command:|\[DEBUG\] Output:|>>> Étape)" "$temp_output" | tail -15 > "$cmd_output_temp"
+                    
+                    # Afficher les commandes avec leurs outputs de façon structurée
+                    local current_step=""
+                    while IFS= read -r line; do
+                        if echo "$line" | grep -q "\[DEBUG\] Etape [0-9]"; then
+                            current_step=$(echo "$line" | sed -E 's/.*\[DEBUG\] Etape ([0-9]+).*/\1/')
+                            echo -e "   ${PURPLE}📋 Etape $current_step: ${line##*\ -\ }${NC}"
+                        elif echo "$line" | grep -q "\[DEBUG\] Command:"; then
+                            command_text=$(echo "$line" | sed 's/.*\[DEBUG\] Command: //')
+                            echo -e "   ${CYAN}   ⚡ Commande: ${command_text}${NC}"
+                        elif echo "$line" | grep -q "\[DEBUG\] Output:"; then
+                            output_text=$(echo "$line" | sed 's/.*\[DEBUG\] Output: //')
+                            echo -e "   ${GREEN}   📤 Sortie: ${output_text}${NC}"
+                        elif [[ "$line" =~ ^\>\>\>\ Étape\ ([0-9]+): ]]; then
+                            echo -e "   ${BLUE}📍 ${line}${NC}"
+                        fi
+                    done < "$cmd_output_temp"
+                    
+                    # Fallback si pas de lignes DEBUG trouvées
+                    if [[ ! -s "$cmd_output_temp" ]]; then
+                        echo -e "   ${YELLOW}⚠️  Pas de logs DEBUG disponibles${NC}"
+                        grep -E "(\$PSYSH_CMD|echo \"Étape|phpunit:|monitor)" "$temp_output" | tail -4 | while IFS= read -r line; do
+                            echo -e "   ${CYAN}🔧 ${line}${NC}"
+                        done
+                    fi
+                    
+                    rm -f "$cmd_output_temp"
                     
                     echo ""
-                    echo -e "${RED}🚨 ERREURS SYSTÈME:${NC}"
-                    local system_errors=$(grep -E "(RuntimeException|PARSE ERROR|Fatal error|Warning:|command not found|No such file)" "$temp_output" | head -2)
+                    echo -e "${RED}🚨 ERREURS SYSTÈME dans ${YELLOW}$(basename "$test_file")${RED}:${NC}"
+                    local system_errors=$(grep -n -E "(RuntimeException|PARSE ERROR|Fatal error|Warning:|command not found|No such file)" "$temp_output" | head -5)
                     if [[ -n "$system_errors" ]]; then
                         echo "$system_errors" | while IFS= read -r line; do
-                            echo -e "   ${RED}💥 ${line}${NC}"
+                            if echo "$line" | grep -q "^[[:space:]]*[0-9]"; then
+                                local line_num=$(echo "$line" | cut -d: -f1)
+                                local error_content=$(echo "$line" | cut -d: -f2-)
+                                
+                                echo -e "   ${RED}💥 [Ligne $line_num] ${error_content}${NC}"
+                                
+                                # Chercher la commande qui a causé cette erreur (safer approach)
+                                local safe_error_content=$(echo "$error_content" | sed 's/\[/\\[/g' | sed 's/\]/\\]/g' | sed 's/"/\\"/g')
+                                
+                                # Afficher les lignes avant et après pour plus de contexte
+                                local start_line=$((line_num - 2))
+                                local end_line=$((line_num + 2))
+                                if [[ $start_line -lt 1 ]]; then start_line=1; fi
+                                
+                                local context=$(sed -n "${start_line},${end_line}p" "$temp_output" 2>/dev/null | nl -v$start_line -w3 -s': ')
+                                if [[ -n "$context" ]]; then
+                                    echo -e "   ${CYAN}🔍 Contexte (lignes $start_line-$end_line):${NC}"
+                                    echo "$context" | while IFS= read -r context_line; do
+                                        if echo "$context_line" | grep -q "$line_num:"; then
+                                            echo -e "      ${RED}→ $context_line${NC}"  # Ligne d'erreur en rouge
+                                        else
+                                            echo -e "      $context_line"
+                                        fi
+                                    done
+                                fi
+                                
+                                local associated_command=$(grep -B 2 -A 2 -F "$safe_error_content" "$temp_output" 2>/dev/null | grep -E "(\\[DEBUG\\] Command:|Command:|monitor|phpunit:)" | head -1 | sed 's/.*Command: //' | sed 's/\\[DEBUG\\] Etape [0-9]\\* - //' || echo "")
+                                
+                                if [[ -n "$associated_command" ]]; then
+                                    echo -e "   ${YELLOW}   📝 Input: ${associated_command}${NC}"
+                                fi
+                                
+                                echo ""  # Ligne vide entre les erreurs
+                            fi
                         done
                     else
                         echo -e "   ${GREEN}✓ Aucune erreur système${NC}"
@@ -428,9 +656,9 @@ run_test() {
         # Ancien format avec monitor direct
         echo -e "${CYAN}Tests inclus dans ce fichier:${NC}"
         # Essayer d'abord le format ">>> Test X:"
-        if grep -q ">>> Test [0-9]*:" "$test_file"; then
-            grep ">>> Test [0-9]*:" "$test_file" | head -5 | while read -r line; do
-                test_name=$(echo "$line" | sed 's/.*>>> Test [0-9]*: //' | sed 's/\"//')
+        if grep -q ">>> Test \[0-9\]*:" "$test_file"; then
+            grep ">>> Test \[0-9\]*:" "$test_file" | head -5 | while read -r line; do
+                test_name=$(echo "$line" | sed 's/.*>>> Test \[0-9\]*: //' | sed 's/\"//')
                 echo "   • $test_name"
             done
         else
@@ -575,17 +803,17 @@ capture_test_details() {
     fi
     
     # Extraire le nombre de tests
-    if [[ "$summary" =~ ([0-9]+).*tests.*échoués.*sur.*([0-9]+) ]]; then
-        local failed_count=${BASH_REMATCH[1]}
-        local total_count=${BASH_REMATCH[2]}
+    if echo "$summary" | grep -q "[0-9].*tests.*échoués.*sur.*[0-9]"; then
+        local failed_count=$(echo "$summary" | sed -E 's/.*([0-9]+).*tests.*échoués.*sur.*([0-9]+).*/\1/')
+        local total_count=$(echo "$summary" | sed -E 's/.*([0-9]+).*tests.*échoués.*sur.*([0-9]+).*/\2/')
         TOTAL_TESTS_COUNT=$((TOTAL_TESTS_COUNT + total_count))
         
         # Extraire les détails des échecs
         local fail_details=$(grep -B 3 -A 3 "❌ FAIL:" "$temp_output" | grep -E "(❌ FAIL:|Résultat attendu:|Résultat obtenu:|Pattern d'erreur)" | head -20)
         FAILED_DETAILS+=("\n${YELLOW}$test_file:${NC}\n$fail_details")
         return 0
-    elif [[ "$summary" =~ \(([0-9]+)/([0-9]+)\) ]]; then
-        local total_count=${BASH_REMATCH[2]}
+    elif echo "$summary" | grep -q "([0-9]*/[0-9]*)"; then
+        local total_count=$(echo "$summary" | sed -E 's/.*\(([0-9]+)\/([0-9]+)\).*/\2/')
         TOTAL_TESTS_COUNT=$((TOTAL_TESTS_COUNT + total_count))
         return 0
     fi

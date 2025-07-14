@@ -1,17 +1,15 @@
 #!/bin/bash
 
-# Test 30: Commande phpunit:create - Création de tests PHPUnit
-# Tests d'intégration des fonctionnalités de création de tests
+# Test 30: Commande phpunit:create avec architecture modulaire
+# Démonstration des capacités avancées de l'unified_test_executor
 
-# Get script directory and project root
+# Obtenir le répertoire du script et charger l'exécuteur unifié
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-PROJECT_ROOT="$( cd "$SCRIPT_DIR/../../.." && pwd )"
+source "$SCRIPT_DIR/../../lib/func/loader.sh"
 
-# Source les bibliothèques de test
-source "$SCRIPT_DIR/../../lib/test_utils.sh"
-
-# Initialiser le test
-init_test "TEST 30: Commande phpunit:create"
+# Initialiser l'environnement de test
+init_test_environment
+init_test "TEST 30: Commande phpunit:create - Architecture avancée"
 
 # Étape 1: Créer un test simple
 test_monitor_multiline "Créer un test simple" \
@@ -64,6 +62,56 @@ test_monitor_multiline "Créer plusieurs tests" \
 phpunit:create SecondTest
 phpunit:list' \
 'FirstTest'
+
+# =============================================================================
+# TESTS AVANCÉS - Démonstration des nouvelles capacités
+# =============================================================================
+
+# Test avec retry automatique
+test_execute "Test avec retry" \
+"phpunit:create RetryTest" \
+"✅ Test créé" \
+--context=phpunit --retry=3 --timeout=10
+
+# Test avec vérification exacte
+test_execute "Vérification exacte du message" \
+"phpunit:create ExactTest" \
+"✅ Test créé : ExactTest" \
+--context=phpunit --output-check=exact
+
+# Test combiné avec synchronisation
+test_execute "Test de synchronisation PHPUnit" \
+"phpunit:create SyncTest" \
+"SyncTest" \
+--context=phpunit --sync-test
+
+# Test avec input depuis fichier temporaire
+echo 'phpunit:create FileTest --description "Test from file"' > /tmp/test_input.txt
+test_from_file "Test depuis fichier" "/tmp/test_input.txt" "Test créé"
+rm -f /tmp/test_input.txt
+
+# Test de combinaison de commandes
+test_combined_commands "Combinaison create + list" \
+"phpunit:create CombinedTest" \
+"phpunit:list" \
+"CombinedTest"
+
+# Test avec pattern d'erreur spécifique
+test_error_pattern "Pattern d'erreur spécifique" \
+"phpunit:create" \
+"Arguments manquants"
+
+# Test avec debug activé
+test_execute "Test avec debug" \
+"phpunit:create DebugTest" \
+"Test créé" \
+--context=phpunit --debug
+
+# Test de performance avec timeout court
+test_execute "Test de performance" \
+"phpunit:create PerfTest" \
+"Test créé" \
+--context=phpunit --timeout=5
 
 # Afficher le résumé
 test_summary

@@ -1,0 +1,257 @@
+#!/bin/bash
+
+# Test 24: Test complet de synchronisation Shell <-> Monitor
+# Teste tous les types de synchronisation possibles
+
+# Get script directory and project root
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT="$( cd "$SCRIPT_DIR/../../.." && pwd )"
+
+# Source les bibliothèques de test
+source "$SCRIPT_DIR/../../lib/psysh_utils.sh"
+
+# Initialiser le test
+init_test "TEST 24: Synchronisation complète Shell <-> Monitor"
+
+# ===== TESTS DE SYNCHRONISATION DES VARIABLES =====
+
+# Test 1: Variable simple Shell -> Monitor
+test_sync_bidirectional "Variable simple Shell -> Monitor" \
+'$x = 42;' \
+'$y = $x * 2; echo $y;' \
+'echo "Résultat: $y";' \
+'84' \
+'variable'
+
+# Test 2: Variable Monitor -> Shell
+test_sync_bidirectional "Variable Monitor -> Shell" \
+'' \
+'$result = 100;' \
+'echo "Résultat: $result";' \
+'100' \
+'variable'
+
+# Test 3: Variable avec calcul complexe
+test_sync_bidirectional "Variable avec calcul complexe" \
+'$base = 10;' \
+'$calculated = pow($base, 3) + 50;' \
+'echo "Résultat: $calculated";' \
+'1050' \
+'variable'
+
+# Test 4: Array synchronisation
+test_sync_bidirectional "Array synchronisation" \
+'$arr = [1, 2, 3];' \
+'$arr[] = 4; $sum = array_sum($arr);' \
+'echo "Somme: $sum";' \
+'10' \
+'variable'
+
+# ===== TESTS DE SYNCHRONISATION DES FONCTIONS =====
+
+# Test 5: Fonction définie dans Shell, utilisée dans Monitor
+test_sync_bidirectional "Fonction Shell -> Monitor" \
+'function multiply($a, $b) { return $a * $b; }' \
+'$result = multiply(7, 8);' \
+'echo "Résultat: $result";' \
+'56' \
+'function'
+
+# Test 6: Fonction définie dans Monitor, utilisée dans Shell
+test_sync_bidirectional "Fonction Monitor -> Shell" \
+'' \
+'function divide($a, $b) { return $a / $b; }' \
+'echo "Résultat: " . divide(100, 4);' \
+'25' \
+'function'
+
+# Test 7: Fonction récursive
+test_sync_bidirectional "Fonction récursive" \
+'function factorial($n) { if ($n <= 1) return 1; return $n * factorial($n - 1); }' \
+'$fact5 = factorial(5);' \
+'echo "5! = $fact5";' \
+'120' \
+'function'
+
+# Test 8: Closure avec variables externes
+test_sync_bidirectional "Closure avec variables externes" \
+'$multiplier = 5;' \
+'$closure = function($x) use ($multiplier) { return $x * $multiplier; }; $result = $closure(8);' \
+'echo "Résultat: $result";' \
+'40' \
+'function'
+
+# ===== TESTS DE SYNCHRONISATION DES CLASSES =====
+
+# Test 9: Classe définie dans Shell, utilisée dans Monitor
+test_sync_bidirectional "Classe Shell -> Monitor" \
+'class Calculator { public function add($a, $b) { return $a + $b; } }' \
+'$calc = new Calculator(); $result = $calc->add(15, 25);' \
+'echo "Résultat: $result";' \
+'40' \
+'class'
+
+# Test 10: Classe définie dans Monitor, utilisée dans Shell
+test_sync_bidirectional "Classe Monitor -> Shell" \
+'' \
+'class Counter { private $count = 0; public function increment() { return ++$this->count; } public function getCount() { return $this->count; } }' \
+'$counter = new Counter(); $counter->increment(); $counter->increment(); echo "Count: " . $counter->getCount();' \
+'2' \
+'class'
+
+# Test 11: Classe avec propriétés statiques
+test_sync_bidirectional "Classe avec propriétés statiques" \
+'class Config { public static $version = "1.0"; public static function getVersion() { return self::$version; } }' \
+'Config::$version = "2.0"; $version = Config::getVersion();' \
+'echo "Version: $version";' \
+'2.0' \
+'class'
+
+# Test 12: Héritage de classe
+test_sync_bidirectional "Héritage de classe" \
+'class Animal { public function speak() { return "Some sound"; } } class Dog extends Animal { public function speak() { return "Woof!"; } }' \
+'$dog = new Dog(); $sound = $dog->speak();' \
+'echo "Dog says: $sound";' \
+'Woof!' \
+'class'
+
+# ===== TESTS DE SYNCHRONISATION DES TRAITS =====
+
+# Test 13: Trait défini dans Shell, utilisé dans Monitor
+test_sync_bidirectional "Trait Shell -> Monitor" \
+'trait Loggable { public function log($message) { return "LOG: " . $message; } } class Service { use Loggable; }' \
+'$service = new Service(); $logged = $service->log("Test message");' \
+'echo $logged;' \
+'LOG: Test message' \
+'trait'
+
+# Test 14: Trait défini dans Monitor, utilisé dans Shell
+test_sync_bidirectional "Trait Monitor -> Shell" \
+'' \
+'trait Timestampable { public function timestamp() { return date("Y-m-d"); } } class Document { use Timestampable; }' \
+'$doc = new Document(); $date = $doc->timestamp(); echo "Date: $date";' \
+"Date: $(date '+%Y-%m-%d')" \
+'trait'
+
+# ===== TESTS DE SYNCHRONISATION DES VARIABLES GLOBALES =====
+
+# Test 15: Variable globale Shell -> Monitor
+test_sync_bidirectional "Variable globale Shell -> Monitor" \
+'$GLOBALS["config"] = ["debug" => true, "version" => "1.0"];' \
+'$debug = $GLOBALS["config"]["debug"]; $version = $GLOBALS["config"]["version"];' \
+'echo "Debug: " . ($debug ? "true" : "false") . ", Version: $version";' \
+'Debug: true, Version: 1.0' \
+'global'
+
+# Test 16: Variable globale Monitor -> Shell
+test_sync_bidirectional "Variable globale Monitor -> Shell" \
+'' \
+'$GLOBALS["results"] = ["success" => true, "count" => 42];' \
+'$success = $GLOBALS["results"]["success"]; $count = $GLOBALS["results"]["count"]; echo "Success: " . ($success ? "true" : "false") . ", Count: $count";' \
+'Success: true, Count: 42' \
+'global'
+
+# ===== TESTS DE SYNCHRONISATION DES CONSTANTES =====
+
+# Test 17: Constante définie dans Shell, utilisée dans Monitor
+test_sync_bidirectional "Constante Shell -> Monitor" \
+'define("MAX_USERS", 100);' \
+'$limit = MAX_USERS * 2;' \
+'echo "Limite: $limit";' \
+'200' \
+'constant'
+
+# Test 18: Constante définie dans Monitor, utilisée dans Shell
+test_sync_bidirectional "Constante Monitor -> Shell" \
+'' \
+'define("API_VERSION", "v2.1");' \
+'echo "API Version: " . API_VERSION;' \
+'API Version: v2.1' \
+'constant'
+
+# ===== TESTS DE SYNCHRONISATION COMPLEXES =====
+
+# Test 19: Combinaison variables + fonctions
+test_sync_bidirectional "Combinaison variables + fonctions" \
+'$data = [1, 2, 3, 4, 5]; function processData($arr) { return array_map(function($x) { return $x * $x; }, $arr); }' \
+'$processed = processData($data); $sum = array_sum($processed);' \
+'echo "Somme des carrés: $sum";' \
+'55' \
+'mixed'
+
+# Test 20: Combinaison classe + trait + variables
+test_sync_bidirectional "Combinaison classe + trait + variables" \
+'trait Calculable { public function calculate($a, $b) { return $a + $b; } } class MathService { use Calculable; } $service = new MathService();' \
+'$result = $service->calculate(25, 17);' \
+'echo "Résultat: $result";' \
+'42' \
+'mixed'
+
+# ===== TESTS DE SYNCHRONISATION BIDIRECTIONNELLE =====
+
+# Test 21: Modification bidirectionnelle d'une variable
+test_sync_bidirectional "Modification bidirectionnelle variable" \
+'$counter = 10;' \
+'$counter += 5; echo "Dans monitor: $counter";' \
+'$counter += 3; echo "Dans shell: $counter";' \
+'Dans monitor: 15' \
+'bidirectional'
+
+# Test 22: Modification bidirectionnelle d'un array
+test_sync_bidirectional "Modification bidirectionnelle array" \
+'$items = ["a", "b"];' \
+'$items[] = "c"; echo "Items: " . implode(", ", $items);' \
+'$items[] = "d"; echo "Final: " . implode(", ", $items);' \
+'Items: a, b, c' \
+'bidirectional'
+
+# ===== TESTS DE SYNCHRONISATION AVANCÉE =====
+
+# Test 23: Namespace et classes (bug de synchronisation namespace)
+test_sync_bidirectional "Namespace et classes (bug de synchronisation namespace)" \
+'' \
+'namespace App\Services; class UserService { public function getUserCount() { return 150; } } $service = new UserService(); $count = $service->getUserCount(); echo "Users: $count";' \
+'' \
+'Users: 150' \
+'namespace'
+
+# Test 24: Interface et implémentation
+test_sync_bidirectional "Interface et implémentation" \
+'interface Drawable { public function draw(); } class Circle implements Drawable { public function draw() { return "Drawing a circle"; } }' \
+'$circle = new Circle(); $drawing = $circle->draw();' \
+'echo $drawing;' \
+'Drawing a circle' \
+'interface'
+
+# Test 25: Exception handling
+test_sync_bidirectional "Exception handling" \
+'class CustomException extends Exception {} function riskyFunction() { throw new CustomException("Test error"); }' \
+'try { riskyFunction(); } catch (CustomException $e) { echo "Caught: " . $e->getMessage(); }' \
+'echo "Test completed";' \
+'Caught: Test error' \
+'exception'
+
+# Afficher le résumé
+test_summary
+
+echo ""
+print_colored "$BLUE" "=== RÉSUMÉ DES TESTS DE SYNCHRONISATION ==="
+print_colored "$GREEN" "✅ Variables: Tests 1-4"
+print_colored "$GREEN" "✅ Fonctions: Tests 5-8"
+print_colored "$GREEN" "✅ Classes: Tests 9-12"
+print_colored "$GREEN" "✅ Traits: Tests 13-14"
+print_colored "$GREEN" "✅ Variables globales: Tests 15-16"
+print_colored "$GREEN" "✅ Constantes: Tests 17-18"
+print_colored "$GREEN" "✅ Combinaisons: Tests 19-20"
+print_colored "$GREEN" "✅ Bidirectionnelles: Tests 21-22"
+print_colored "$GREEN" "✅ Avancées: Tests 23-25"
+echo ""
+
+# Sortir avec le code approprié
+if [[ $FAIL_COUNT -gt 0 ]]; then
+    print_colored "$RED" "❌ $FAIL_COUNT tests ont échoué - bugs de synchronisation détectés"
+    exit 1
+else
+    print_colored "$GREEN" "✅ Tous les tests de synchronisation ont réussi"
+    exit 0
+fi

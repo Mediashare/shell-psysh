@@ -49,7 +49,7 @@ Ajoute des nouveaux tests sur l'implémentation de l'autoloader, des nouvelles c
 #### Nouveux tests commandes PhpUnit
 Ajoutes des nouveaux tests des commandes phpunit:* avec la structure ./tests/Command/Phpunit/{Create, Add, Code, Assert, Run, ...}
 Soit très complet en testant toutes les fonctionnalités, combinaisons et options possibles, tests tous, il y a aussi les exemples de tests de synchro entre les shell psysh et phpunit:code
-
-
+#### Functions & Architecture
+##### Méthodes de test ultra modulaire
 
 Créer un fichier EXAMPLES.md avec tous les usages possibles et combiné des custom commandes psysh extended et avec des explication de la bonne manière

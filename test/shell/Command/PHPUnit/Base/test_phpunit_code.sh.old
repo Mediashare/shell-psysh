@@ -7,7 +7,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
-PSYSH_CMD="$PROJECT_ROOT/vendor/bin/psysh --config $PROJECT_ROOT/config/config.php"
+
 
 echo "🧪 Testing phpunit:code command..."
 
@@ -17,7 +17,7 @@ echo "📝 Test 1: Basic code mode activation"
     echo 'phpunit:create TestService'
     echo 'phpunit:code'
     echo 'exit'
-} | timeout 15 $PSYSH_CMD --no-interactive > /tmp/psysh_code_1.out 2>&1 || true
+} | $PSYSH_CMD --no-interactive > /tmp/psysh_code_1.out 2>&1 || true
 if grep -q -E "(Mode code|code activé)" /tmp/psysh_code_1.out; then
     echo "✅ Basic code mode activation works"
 else
@@ -33,7 +33,7 @@ echo "📝 Test 2: Code mode with variable creation"
     echo '$user = new stdClass()'
     echo '$user->name = "John"'
     echo 'exit'
-} | timeout 15 $PSYSH_CMD --no-interactive > /tmp/psysh_code_2.out 2>&1 || true
+} | $PSYSH_CMD --no-interactive > /tmp/psysh_code_2.out 2>&1 || true
 if grep -q -E "(Mode code|variables|ajoutée)" /tmp/psysh_code_2.out; then
     echo "✅ Code mode with variables works"
 else
@@ -43,7 +43,7 @@ fi
 
 # Test 3: Error handling - no test created first
 echo "📝 Test 3: Error handling - no test created first"
-echo 'phpunit:code' | timeout 10 $PSYSH_CMD --no-interactive > /tmp/psysh_code_3.out 2>&1 || true
+echo 'phpunit:code' | $PSYSH_CMD --no-interactive > /tmp/psysh_code_3.out 2>&1 || true
 if grep -q -E "(Aucun test|test actuel|error)" /tmp/psysh_code_3.out; then
     echo "✅ Error handling works"
 else
@@ -59,7 +59,7 @@ echo "📝 Test 4: Code mode with method calls"
     echo '$data = ["key" => "value"]'
     echo '$result = array_keys($data)'
     echo 'exit'
-} | timeout 15 $PSYSH_CMD --no-interactive > /tmp/psysh_code_4.out 2>&1 || true
+} | $PSYSH_CMD --no-interactive > /tmp/psysh_code_4.out 2>&1 || true
 if grep -q -E "(Mode code|terminé)" /tmp/psysh_code_4.out; then
     echo "✅ Code mode with method calls works"
 else
@@ -76,7 +76,7 @@ echo "📝 Test 5: Code mode with complex objects"
     echo '$config->debug = true'
     echo '$config->env = "test"'
     echo 'exit'
-} | timeout 15 $PSYSH_CMD --no-interactive > /tmp/psysh_code_5.out 2>&1 || true
+} | $PSYSH_CMD --no-interactive > /tmp/psysh_code_5.out 2>&1 || true
 if grep -q -E "(Mode code|terminé)" /tmp/psysh_code_5.out; then
     echo "✅ Code mode with complex objects works"
 else

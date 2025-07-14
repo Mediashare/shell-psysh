@@ -7,7 +7,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
-PSYSH_CMD="$PROJECT_ROOT/vend$PROJECT_ROOT/bin/psysh --config $PROJECT_ROOT/config/config.php"
+
 
 echo "🧪 Testing phpunit:assert command..."
 

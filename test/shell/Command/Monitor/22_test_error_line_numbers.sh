@@ -9,7 +9,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$( cd "$SCRIPT_DIR/../../.." && pwd )"
 
 # Source les bibliothèques de test
-source "$SCRIPT_DIR/../../lib/psysh_utils.sh"
+source "$SCRIPT_DIR/../../lib/func/loader.sh"
 
 # Initialiser le test
 init_test "TEST 22: Numéros de ligne d'erreur"

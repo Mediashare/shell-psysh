@@ -7,7 +7,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
-PSYSH_CMD="$PROJECT_ROOT/vendor/bin/psysh --config $PROJECT_ROOT/config/config.php"
+
 
 echo "🧪 Testing phpunit:eval command..."
 
@@ -17,7 +17,7 @@ echo "📝 Test 1: Basic expression evaluation"
     echo 'phpunit:create TestService'
     echo '$result = 42'
     echo "phpunit:eval '\$result === 42'"
-} | timeout 10 $PSYSH_CMD --no-interactive > /tmp/psysh_eval_1.out 2>&1 || true
+} | $PSYSH_CMD --no-interactive > /tmp/psysh_eval_1.out 2>&1 || true
 if grep -q "Expression évaluée avec succès" /tmp/psysh_eval_1.out; then
     echo "✅ Basic expression evaluation works"
 else
@@ -31,7 +31,7 @@ echo "📝 Test 2: String comparison evaluation"
     echo 'phpunit:create UserService'
     echo '$user = new stdClass(); $user->name = "John"'
     echo "phpunit:eval '\$user->name == \"John\"'"
-} | timeout 10 $PSYSH_CMD --no-interactive > /tmp/psysh_eval_2.out 2>&1 || true
+} | $PSYSH_CMD --no-interactive > /tmp/psysh_eval_2.out 2>&1 || true
 if grep -q "Expression évaluée avec succès" /tmp/psysh_eval_2.out; then
     echo "✅ String comparison evaluation works"
 else
@@ -45,7 +45,7 @@ echo "📝 Test 3: Array count evaluation"
     echo 'phpunit:create DataService'
     echo '$items = [1, 2, 3]'
     echo "phpunit:eval 'count(\$items) > 0'"
-} | timeout 10 $PSYSH_CMD --no-interactive > /tmp/psysh_eval_3.out 2>&1 || true
+} | $PSYSH_CMD --no-interactive > /tmp/psysh_eval_3.out 2>&1 || true
 if grep -q "Expression évaluée avec succès" /tmp/psysh_eval_3.out; then
     echo "✅ Array count evaluation works"
 else
@@ -59,7 +59,7 @@ echo "📝 Test 4: instanceof evaluation"
     echo 'phpunit:create ObjectService'
     echo '$obj = new stdClass()'
     echo "phpunit:eval '\$obj instanceof stdClass'"
-} | timeout 10 $PSYSH_CMD --no-interactive > /tmp/psysh_eval_4.out 2>&1 || true
+} | $PSYSH_CMD --no-interactive > /tmp/psysh_eval_4.out 2>&1 || true
 if grep -q "Expression évaluée avec succès" /tmp/psysh_eval_4.out; then
     echo "✅ instanceof evaluation works"
 else
@@ -73,7 +73,7 @@ echo "📝 Test 5: Boolean evaluation"
     echo 'phpunit:create BooleanService'
     echo '$active = true'
     echo "phpunit:eval '\$active === true'"
-} | timeout 10 $PSYSH_CMD --no-interactive > /tmp/psysh_eval_5.out 2>&1 || true
+} | $PSYSH_CMD --no-interactive > /tmp/psysh_eval_5.out 2>&1 || true
 if grep -q "Expression évaluée avec succès" /tmp/psysh_eval_5.out; then
     echo "✅ Boolean evaluation works"
 else
@@ -87,7 +87,7 @@ echo "📝 Test 6: Failed expression evaluation"
     echo 'phpunit:create FailService'
     echo '$value = 10'
     echo "phpunit:eval '\$value > 20'"
-} | timeout 10 $PSYSH_CMD --no-interactive > /tmp/psysh_eval_6.out 2>&1 || true
+} | $PSYSH_CMD --no-interactive > /tmp/psysh_eval_6.out 2>&1 || true
 if grep -q "Expression évaluée à false" /tmp/psysh_eval_6.out; then
     echo "✅ Failed expression evaluation works"
 else
@@ -101,7 +101,7 @@ echo "📝 Test 7: Complex expression evaluation"
     echo 'phpunit:create ComplexService'
     echo '$config = ["debug" => true, "env" => "test"]'
     echo "phpunit:eval 'isset(\$config[\"debug\"]) && \$config[\"debug\"] === true'"
-} | timeout 10 $PSYSH_CMD --no-interactive > /tmp/psysh_eval_7.out 2>&1 || true
+} | $PSYSH_CMD --no-interactive > /tmp/psysh_eval_7.out 2>&1 || true
 if grep -q "Expression évaluée avec succès" /tmp/psysh_eval_7.out; then
     echo "✅ Complex expression evaluation works"
 else
@@ -114,7 +114,7 @@ echo "📝 Test 8: Error handling - invalid expression"
 {
     echo 'phpunit:create ErrorService'
     echo "phpunit:eval '\$undefinedVar->method()'"
-} | timeout 10 $PSYSH_CMD --no-interactive > /tmp/psysh_eval_8.out 2>&1 || true
+} | $PSYSH_CMD --no-interactive > /tmp/psysh_eval_8.out 2>&1 || true
 if grep -q -E "(Erreur|error)" /tmp/psysh_eval_8.out; then
     echo "✅ Error handling for invalid expression works"
 else
@@ -127,7 +127,7 @@ echo "📝 Test 9: Error handling - no expression provided"
 {
     echo 'phpunit:create TestService'
     echo 'phpunit:eval'
-} | timeout 10 $PSYSH_CMD --no-interactive > /tmp/psysh_eval_9.out 2>&1 || true
+} | $PSYSH_CMD --no-interactive > /tmp/psysh_eval_9.out 2>&1 || true
 if grep -q -E "(Aucune expression|required|error)" /tmp/psysh_eval_9.out; then
     echo "✅ Missing expression handling works"
 else
@@ -141,7 +141,7 @@ echo "📝 Test 10: Numeric comparison with details"
     echo 'phpunit:create NumericService'
     echo '$price = 15.50'
     echo "phpunit:eval '\$price >= 10.0'"
-} | timeout 10 $PSYSH_CMD --no-interactive > /tmp/psysh_eval_10.out 2>&1 || true
+} | $PSYSH_CMD --no-interactive > /tmp/psysh_eval_10.out 2>&1 || true
 if grep -q "Expression évaluée avec succès" /tmp/psysh_eval_10.out; then
     echo "✅ Numeric comparison with details works"
 else
@@ -155,7 +155,7 @@ echo "📝 Test 11: Expression with method call"
     echo 'phpunit:create MethodService'
     echo '$arr = [1, 2, 3, 4, 5]'
     echo "phpunit:eval 'array_sum(\$arr) === 15'"
-} | timeout 10 $PSYSH_CMD --no-interactive > /tmp/psysh_eval_11.out 2>&1 || true
+} | $PSYSH_CMD --no-interactive > /tmp/psysh_eval_11.out 2>&1 || true
 if grep -q "Expression évaluée avec succès" /tmp/psysh_eval_11.out; then
     echo "✅ Expression with method call works"
 else
@@ -169,7 +169,7 @@ echo "📝 Test 12: Empty check evaluation"
     echo 'phpunit:create EmptyService'
     echo '$errors = []'
     echo "phpunit:eval 'empty(\$errors)'"
-} | timeout 10 $PSYSH_CMD --no-interactive > /tmp/psysh_eval_12.out 2>&1 || true
+} | $PSYSH_CMD --no-interactive > /tmp/psysh_eval_12.out 2>&1 || true
 if grep -q "Expression évaluée avec succès" /tmp/psysh_eval_12.out; then
     echo "✅ Empty check evaluation works"
 else

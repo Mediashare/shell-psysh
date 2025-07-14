@@ -14,19 +14,19 @@ init_test "PHPUnit: Command Create"
 
 # Test création basique
 run_test_step "Créer un test simple" \
-    "$PROJECT_ROOT/bin/psysh -c \"phpunit:create 'App\\\\Service\\\\TestService'\"" \
+    "$PROJECT_RO$PROJECT_ROOT/bin/psysh -c \"phpunit:create 'App\\\\Service\\\\TestService'\"" \
     "✅" \
     check_contains
 
 # Test création avec une classe simple
 run_test_step "Créer un test pour une classe utilitaire" \
-    "$PROJECT_ROOT/bin/psysh -c \"phpunit:create 'App\\\\Util\\\\Calculator'\"" \
+    "$PROJECT_RO$PROJECT_ROOT/bin/psysh -c \"phpunit:create 'App\\\\Util\\\\Calculator'\"" \
     "✅" \
     check_contains
 
 # Test avec namespace simple
 run_test_step "Créer un test avec namespace simple" \
-    "$PROJECT_ROOT/bin/psysh -c \"phpunit:create 'MyClass'\"" \
+    "$PROJECT_RO$PROJECT_ROOT/bin/psysh -c \"phpunit:create 'MyClass'\"" \
     "✅" \
     check_contains
 
