@@ -32,10 +32,10 @@ class AutoloadCommand extends BaseCommand
         }
 
         // Write welcome message
-        $this->writeInfo($output, $context['welcome_message']);
+        $output->writeln($this->formatInfo($context['welcome_message']));
 
         // Success message
-        $this->writeSuccess($output, 'Project autoloaded successfully');
+        $output->writeln($this->formatSuccess('Project autoloaded successfully'));
         return 0;
     }
 }
