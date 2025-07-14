@@ -70,65 +70,99 @@ class EnvironmentService
         $variables = [];
         $welcomeMessage = "🎼 Symfony Project Detected\n";
         
-        // Try to load Symfony kernel
-        $kernelPath = $this->findSymfonyKernel($projectRoot);
-        if ($kernelPath) {
-            try {
-                require_once $projectRoot . '/vendor/autoload.php';
-                $kernel = require $kernelPath;
+        try {
+            // Load the autoloader
+            require_once $projectRoot . '/vendor/autoload.php';
+            
+            // Try different approaches to create the kernel
+            $kernel = null;
+            
+            // Modern Symfony approach (5.3+)
+            if (file_exists($projectRoot . '/src/Kernel.php')) {
+                // Load environment variables
+                $env = $_ENV['APP_ENV'] ?? $_SERVER['APP_ENV'] ?? 'dev';
+                $debug = (bool) ($_ENV['APP_DEBUG'] ?? $_SERVER['APP_DEBUG'] ?? ('prod' !== $env));
                 
-                if ($kernel instanceof \Symfony\Component\HttpKernel\KernelInterface) {
-                    $kernel->boot();
-                    $container = $kernel->getContainer();
-                    
-                    $variables['kernel'] = $kernel;
-                    $variables['container'] = $container;
-                    
-                    // Common Symfony services
-                    if ($container->has('doctrine.orm.entity_manager')) {
-                        $variables['em'] = $container->get('doctrine.orm.entity_manager');
-                    }
-                    
-                    if ($container->has('router')) {
-                        $variables['router'] = $container->get('router');
-                    }
-                    
-                    if ($container->has('logger')) {
-                        $variables['logger'] = $container->get('logger');
-                    }
-                    
-                    if ($container->has('security.token_storage')) {
-                        $variables['security'] = $container->get('security.token_storage');
-                    }
-                    
-                    if ($container->has('twig')) {
-                        $variables['twig'] = $container->get('twig');
-                    }
-                    
-                    if ($container->has('form.factory')) {
-                        $variables['formFactory'] = $container->get('form.factory');
-                    }
-                    
-                    if ($container->has('event_dispatcher')) {
-                        $variables['dispatcher'] = $container->get('event_dispatcher');
-                    }
-                    
-                    // Add service names for autocompletion
-                    $this->availableVariables = array_keys($variables);
-                    
-                    $welcomeMessage .= "✅ Kernel loaded, container available\n";
-                    $welcomeMessage .= "📦 Available variables: \$kernel, \$container";
-                    
-                    if (isset($variables['em'])) {
-                        $welcomeMessage .= ", \$em";
-                    }
-                    if (isset($variables['router'])) {
-                        $welcomeMessage .= ", \$router";
+                // Detect the correct namespace from composer.json
+                $kernelClass = $this->detectKernelClass($projectRoot);
+                
+                if ($kernelClass && class_exists($kernelClass)) {
+                    $kernel = new $kernelClass($env, $debug);
+                }
+            }
+            
+            // Legacy Symfony approach
+            if (!$kernel && file_exists($projectRoot . '/app/AppKernel.php')) {
+                require_once $projectRoot . '/app/AppKernel.php';
+                $env = $_ENV['SYMFONY_ENV'] ?? $_SERVER['SYMFONY_ENV'] ?? 'dev';
+                $debug = (bool) ($_ENV['SYMFONY_DEBUG'] ?? $_SERVER['SYMFONY_DEBUG'] ?? ('prod' !== $env));
+                
+                if (class_exists('AppKernel')) {
+                    $kernel = new \AppKernel($env, $debug);
+                }
+            }
+            
+            if ($kernel instanceof \Symfony\Component\HttpKernel\KernelInterface) {
+                $kernel->boot();
+                $container = $kernel->getContainer();
+                
+                $variables['kernel'] = $kernel;
+                $variables['container'] = $container;
+                
+                // Common Symfony services
+                $services = [
+                    'em' => ['doctrine.orm.entity_manager', 'doctrine.orm.default_entity_manager'],
+                    'router' => ['router', 'router.default'],
+                    'logger' => ['logger', 'monolog.logger'],
+                    'security' => ['security.token_storage'],
+                    'twig' => ['twig'],
+                    'formFactory' => ['form.factory'],
+                    'dispatcher' => ['event_dispatcher'],
+                    'cache' => ['cache.app'],
+                    'translator' => ['translator'],
+                    'validator' => ['validator'],
+                    'serializer' => ['serializer'],
+                    'mailer' => ['mailer', 'mailer.mailer'],
+                ];
+                
+                foreach ($services as $varName => $serviceIds) {
+                    foreach ((array) $serviceIds as $serviceId) {
+                        if ($container->has($serviceId)) {
+                            try {
+                                $variables[$varName] = $container->get($serviceId);
+                                break;
+                            } catch (\Exception $e) {
+                                // Service might be private, skip it
+                            }
+                        }
                     }
                 }
-            } catch (\Exception $e) {
-                $welcomeMessage .= "⚠️  Could not load kernel: " . $e->getMessage();
+                
+                // Add service names for autocompletion
+                $this->availableVariables = array_keys($variables);
+                
+                $welcomeMessage .= "✅ Kernel loaded, container available\n";
+                $welcomeMessage .= "📦 Available variables: \$kernel, \$container";
+                
+                $availableServices = array_filter(array_keys($services), function($key) use ($variables) {
+                    return isset($variables[$key]);
+                });
+                
+                if (!empty($availableServices)) {
+                    $welcomeMessage .= ", \$" . implode(", \$", $availableServices);
+                }
+                
+                $welcomeMessage .= "\n";
+                $welcomeMessage .= "📝 Environment: {$kernel->getEnvironment()} | Debug: " . ($kernel->isDebug() ? 'on' : 'off');
+            } else {
+                $welcomeMessage .= "⚠️  Could not create Symfony kernel\n";
+                $welcomeMessage .= "💡 Make sure you're in the root of a Symfony project";
             }
+        } catch (\Exception $e) {
+            $welcomeMessage .= "⚠️  Could not load kernel: " . $e->getMessage() . "\n";
+            $welcomeMessage .= "💡 Try running 'composer install' first";
+        } catch (\Throwable $e) {
+            $welcomeMessage .= "⚠️  Error: " . $e->getMessage();
         }
         
         return [
@@ -139,26 +173,54 @@ class EnvironmentService
     }
     
     /**
-     * Find Symfony kernel
+     * Detect kernel class from composer.json PSR-4 autoload
      */
-    private function findSymfonyKernel(string $root): ?string
+    private function detectKernelClass(string $projectRoot): ?string
     {
-        $possiblePaths = [
-            '/config/bootstrap.php',
-            '/app/bootstrap.php.cache',
-            '/var/bootstrap.php.cache',
-            '/public/index.php',
-            '/web/app.php',
-            '/web/app_dev.php',
-        ];
-        
-        foreach ($possiblePaths as $path) {
-            if (file_exists($root . $path)) {
-                return $root . $path;
-            }
+        $composerFile = $projectRoot . '/composer.json';
+        if (!file_exists($composerFile)) {
+            return 'App\\Kernel'; // Default fallback
         }
         
-        return null;
+        try {
+            $composerData = json_decode(file_get_contents($composerFile), true);
+            
+            // Check PSR-4 autoload
+            if (isset($composerData['autoload']['psr-4'])) {
+                foreach ($composerData['autoload']['psr-4'] as $namespace => $path) {
+                    // Look for namespaces that map to 'src/'
+                    if ($path === 'src/' || $path === 'src') {
+                        $namespace = rtrim($namespace, '\\');
+                        $kernelClass = $namespace . '\\Kernel';
+                        
+                        // Verify the kernel file exists
+                        $kernelFile = $projectRoot . '/src/Kernel.php';
+                        if (file_exists($kernelFile)) {
+                            return $kernelClass;
+                        }
+                    }
+                }
+            }
+            
+            // Also check autoload-dev
+            if (isset($composerData['autoload-dev']['psr-4'])) {
+                foreach ($composerData['autoload-dev']['psr-4'] as $namespace => $path) {
+                    if ($path === 'src/' || $path === 'src') {
+                        $namespace = rtrim($namespace, '\\');
+                        $kernelClass = $namespace . '\\Kernel';
+                        
+                        if (file_exists($projectRoot . '/src/Kernel.php')) {
+                            return $kernelClass;
+                        }
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            // Ignore JSON parsing errors
+        }
+        
+        // Fallback to common namespace
+        return 'App\\Kernel';
     }
     
     /**

@@ -26,9 +26,17 @@ class AutoloadCommand extends BaseCommand
         $envService = new EnvironmentService();
         $context = $envService->loadProjectContext();
 
-        // Set scope variables in shell context
-        foreach ($context['variables'] as $name => $value) {
-            $this->setShellVariable($name, $value);
+        // Get the shell instance to set scope variables
+        $shell = $this->getApplication();
+        if ($shell instanceof \Psy\Shell) {
+            // Get current scope variables
+            $currentVars = $shell->getScopeVariables();
+            
+            // Merge with new variables from context
+            $updatedVars = array_merge($currentVars, $context['variables']);
+            
+            // Set all variables in shell scope
+            $shell->setScopeVariables($updatedVars);
         }
 
         // Write welcome message
