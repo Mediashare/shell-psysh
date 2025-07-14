@@ -29,6 +29,11 @@ class AutoloadCommand extends BaseCommand
         // Get the shell instance to set scope variables
         $shell = $this->getApplication();
         if ($shell instanceof \Psy\Shell) {
+            // Initialize the shell sync service
+            $syncService = \Psy\Extended\Service\ShellSyncService::getInstance();
+            $syncService->setMainShell($shell);
+            $GLOBALS['psysh_shell_sync_service'] = $syncService;
+            
             // Get current scope variables
             $currentVars = $shell->getScopeVariables();
             
@@ -37,6 +42,9 @@ class AutoloadCommand extends BaseCommand
             
             // Set all variables in shell scope
             $shell->setScopeVariables($updatedVars);
+            
+            // Sync to all contexts
+            $syncService->syncFromMainShell();
         }
 
         // Write welcome message

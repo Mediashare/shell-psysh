@@ -371,16 +371,27 @@ trait PHPUnitCommandTrait
      */
     protected function getMainShellContext(): array
     {
-        // Utiliser le service de synchronisation si disponible
+        // Priorité 1: Récupérer directement depuis le shell principal
+        $shell = $this->getApplication();
+        if ($shell instanceof \Psy\Shell) {
+            try {
+                return $shell->getScopeVariables();
+            } catch (\Exception $e) {
+                // Continuer avec les fallbacks
+            }
+        }
+        
+        // Priorité 2: Utiliser le service de synchronisation si disponible
         $syncService = $GLOBALS['psysh_shell_sync_service'] ?? null;
         if ($syncService && $syncService instanceof \Mediashare\Psysh\Service\ShellSyncService) {
             return $syncService->getMainShellVariables();
         }
         
-        // Fallback: récupérer depuis les globals
-        $mainShellContext = $GLOBALS['psysh_main_shell_context'] ?? [];
+        // Priorité 3: Fallback sur les globals
+        $mainShellContext = $GLOBALS['psysh_shell_variables'] ?? [];
+        $globalContext = $GLOBALS['psysh_main_shell_context'] ?? [];
         
-        // Également récupérer depuis le fichier de persistance
+        // Priorité 4: Récupérer depuis le fichier de persistance
         $tempDir = sys_get_temp_dir();
         $filename = $tempDir . '/psysh_variables_' . getmypid() . '.dat';
         if (file_exists($filename)) {
@@ -395,7 +406,7 @@ trait PHPUnitCommandTrait
             }
         }
         
-        return $mainShellContext;
+        return array_merge($mainShellContext, $globalContext);
     }
     
     /**
@@ -605,6 +616,15 @@ trait PHPUnitCommandTrait
      */
     protected function setShellVariable(string $name, $value): void
     {
+        // Try to set in actual shell context first
+        $shell = $this->getApplication();
+        if ($shell instanceof \Psy\Shell) {
+            $currentVars = $shell->getScopeVariables();
+            $currentVars[$name] = $value;
+            $shell->setScopeVariables($currentVars);
+        }
+        
+        // Also maintain in globals for backward compatibility
         if (!isset($GLOBALS['psysh_shell_variables'])) {
             $GLOBALS['psysh_shell_variables'] = [];
         }
