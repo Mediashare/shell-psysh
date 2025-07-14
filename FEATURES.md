@@ -5,16 +5,11 @@
 - Commandes avec $code en argument sans quotes ""
 ## Prompts
 ### Refactorization
-#### Intégration psy/psysh package
-Analyse les projets ../psysh et ../shell-psysh dans le but étant de le modifier en profondeurs le projet shell-psysh (ou psy/psysh) en ajoutant des nouvelles commandes au shell psysh et en intégrant un autoloader de contexte pour le projet dans le quel est lancer la commande psysh (par exemple avec un projet symfony nous aurions les $variables $container, $em, $router ect...).
-Base toi sur le fonctionnement de psy/psysh pour faire tes modifications
-
-à partir du projet ~/Desktop/psysh qui est un package d'extension de psy/psysh permettant d'avoir de nouvelles commandes du shell psysh, peux tu intégrer ~/Desktop/psysh dans ~/Desktop/shell-psysh qui est le package psy/psysh pour avoir un shell psysh interactif avec les nouvelles commandes. Analyse scrupuleusement le projet ~/Desktop/psysh et le fonctionnement de ~/Desktop/shell-psysh afin d'avoir une implémentation la plus fluide possible. Tu devras également refactoriser l'intégration de ~/Desktop/psysh dans ~/Desktop/shell-psysh pour avoir la meilleur logique en utilisant les composant déjà existant de psy/psysh. Il est possible que dans ~/Desktop/psysh il y ait des composant et fichiers en trop, quand tu as un doute pose moi la question sur la manière de l'intégrer. 
-
-Normalement tu ne devrais pas à avoir à faire de modifications sur le projet ~/Desktop/psysh, pose moi la question si tu as une idée sur une modif de ce projet. Concentre toi sur le projet d'intégrer psysh dans shell-psysh
+#### Synchronisation shell <-> phpunit:*
+Etablie un ensemble de tests phpunit testant des combinaisons d'expressions/commands shell psysh et commandes phpunit:*. Etablie des workflows (ou scénarios d'usages) et mets les à l'épreuves dans des tests unitaires. Le but étant que l'usages des commandes shell psysh soient le plus intuitifs possible, et couvre l'entièreté des cas d'usages lors de l'execution de workflow.
 ### AutoCompletion
 [OK] Autorise les suggestion pour les tabulation comme : phpunit:[TAB]run
-Pour cette class autoloader dans le projet:
+Pour cette class autoloadé dans le projet:
 
 namespace App\Service;
 
@@ -42,6 +37,8 @@ un helper standard quand use command help into shell psysh quand command here: h
 and helper complex with more usage into helper: help phpunit:debug 
 #### phpunit:code
 Vérifier si les objets complexe créer dans le shell psysh principal est bien partagé avec le shell phpunit:code
+#### phpunit:assert argument from expression
+Il doit être possible de lancer la commande phpunit:assert $result === 42 sans les quotes
 ### Composer Require Package
 Quelle est la meilleur manière d"extend la commande psysh à partir d'un composer require package ? Le but étant d'être le plus flexible possible pour rajouter les fonctionnalités du package composer et cela de manière intelligente. Il faut savoir que l'extension de psysh comprend des nouvelles commandes psysh shell avec des extends Psy\Command\Command (provenant du package psy/psysh) et l'autoloading automatique du projet et de ces principal où l'on require le package d'extension psysh, car cela permet d'avoir de l'auto suggestion sur les namespaces et permet aussi d'avoir accès par exemple au $container et services de symfony si le projet principal est un symfony ...
 ### ./tests

@@ -1,0 +1,123 @@
+#!/bin/bash
+
+# Test 15: Gestion des exceptions
+# Test automatisé avec assertions efficaces
+
+# Get script directory and project root
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT="$( cd "$SCRIPT_DIR/../../.." && pwd )"
+
+# Source les bibliothèques de test
+source "$SCRIPT_DIR/../../lib/psysh_utils.sh"
+
+# Initialiser le test
+init_test "TEST 15: Gestion des exceptions"
+
+# Étape 1: Test exception simple avec try/catch
+test_monitor_expression "Exception simple" \
+'try { throw new Exception("Test"); } catch (Exception $e) { echo $e->getMessage(); }' \
+'Test'
+
+# Étape 2: Test exception avec message personnalisé
+test_monitor_expression "Exception personnalisée" \
+'try { throw new Exception("Error 404"); } catch (Exception $e) { echo "Caught: " . $e->getMessage(); }' \
+'Caught: Error 404'
+
+# Étape 3: Test multiple exceptions
+test_monitor_multiline "Multiple exceptions" \
+'function testFunction($type) {
+    switch($type) {
+        case "invalid":
+            throw new InvalidArgumentException("Invalid argument");
+        case "runtime":
+            throw new RuntimeException("Runtime error");
+        default:
+            return "OK";
+    }
+}
+
+try {
+    echo testFunction("normal");
+} catch (Exception $e) {
+    echo "Error: " . $e->getMessage();
+}' \
+'OK'
+
+# Étape 4: Test capture d'exception spécifique
+test_monitor_multiline "Exception spécifique" \
+'function divide($a, $b) {
+    if ($b == 0) {
+        throw new InvalidArgumentException("Division by zero");
+    }
+    return $a / $b;
+}
+
+try {
+    echo divide(10, 0);
+} catch (InvalidArgumentException $e) {
+    echo "Invalid: " . $e->getMessage();
+}' \
+'Invalid: Division by zero'
+
+# Étape 5: Test exception dans une classe
+test_monitor_multiline "Exception dans classe" \
+'class Calculator {
+    public function sqrt($number) {
+        if ($number < 0) {
+            throw new Exception("Negative number");
+        }
+        return sqrt($number);
+    }
+}
+
+$calc = new Calculator();
+try {
+    echo $calc->sqrt(16);
+} catch (Exception $e) {
+    echo "Error: " . $e->getMessage();
+}' \
+'4'
+
+# Étape 6: Test finally block
+test_monitor_multiline "Finally block" \
+'$executed = "";
+try {
+    $executed .= "try ";
+    throw new Exception("test");
+} catch (Exception $e) {
+    $executed .= "catch ";
+} finally {
+    $executed .= "finally";
+}
+echo $executed;' \
+'try catch finally'
+
+# Étape 7: Test exception personnalisée
+test_monitor_multiline "Exception personnalisée" \
+'class CustomException extends Exception {
+    public function __construct($message, $code = 0) {
+        parent::__construct("Custom: " . $message, $code);
+    }
+}
+
+try {
+    throw new CustomException("My error");
+} catch (CustomException $e) {
+    echo $e->getMessage();
+}' \
+'Custom: My error'
+
+# Étape 8: Test exception non capturée (devrait générer une erreur)
+test_monitor_error "Exception non capturée" \
+'throw new Exception("Uncaught exception");' \
+'(Uncaught exception|Fatal error|Error: Uncaught)'
+
+# Afficher le résumé
+test_summary
+
+# Sortir avec le code approprié
+if [[ $FAIL_COUNT -gt 0 ]]; then
+    exit 1
+else
+    exit 0
+fi

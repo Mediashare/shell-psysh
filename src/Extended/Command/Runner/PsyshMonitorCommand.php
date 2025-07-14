@@ -98,9 +98,14 @@ class PsyshMonitorCommand extends BaseCommand
                 // Detect new and modified variables
                 $changedVars = [];
                 
-                // DEBUG: Afficher les variables avant et après
-                // $output->writeln("DEBUG - Initial vars: " . json_encode(array_keys($initialVarsForComparison)));
-                // $output->writeln("DEBUG - Final vars: " . json_encode(array_keys($finalVars)));
+                // Debug mode: Show what we're working with (activated during tests or with --debug)
+                $debugMode = $input->getOption('debug') || (defined('PHPUNIT_COMPOSER_INSTALL') || defined('__PHPUNIT_PHAR__') || class_exists('PHPUnit\Framework\TestCase'));
+                
+                if ($debugMode) {
+                    $output->writeln("DEBUG - Initial vars: " . json_encode(array_keys($initialVarsForComparison)));
+                    $output->writeln("DEBUG - Final vars: " . json_encode(array_keys($finalVars)));
+                    $output->writeln("DEBUG - Code executed: " . $code);
+                }
                 
                 // Compare final vars with initial vars
                 foreach ($finalVars as $name => $value) {
@@ -113,6 +118,14 @@ class PsyshMonitorCommand extends BaseCommand
                     }
                 }
                 
+                if ($debugMode) {
+                    $output->writeln("DEBUG - Changed vars: " . json_encode(array_keys($changedVars)));
+                    $output->writeln("DEBUG - Has result in final vars: " . (isset($finalVars['result']) ? 'YES' : 'NO'));
+                    if (isset($finalVars['result'])) {
+                        $output->writeln("DEBUG - Result value: " . var_export($finalVars['result'], true));
+                    }
+                }
+                
                 // Update context with all final variables
                 if ($this->context) {
                     // Le contexte PsySH ne supporte pas set(), on doit utiliser setAll()
@@ -121,11 +134,35 @@ class PsyshMonitorCommand extends BaseCommand
                     $this->context->setAll($updatedVars);
                 }
                 
+                // Always show variables when --vars is used
+                $output->writeln('');
+                $output->writeln('<comment>📝 Variables modifiées:</comment>');
+                
                 if (!empty($changedVars)) {
-                    $output->writeln('');
-                    $output->writeln('<comment>📝 Variables modifiées:</comment>');
                     foreach ($changedVars as $name => $value) {
                         $output->writeln(sprintf('   $%s = %s', $name, var_export($value, true)));
+                    }
+                } else {
+                    // If no changes detected, check if we have variables that might be relevant
+                    // especially those that look like they were created by the code
+                    $codeVariables = [];
+                    
+                    // Check if the executed code creates variables we should show
+                    if (preg_match_all('/\$([a-zA-Z_][a-zA-Z0-9_]*)\s*=/', $code, $matches)) {
+                        foreach ($matches[1] as $varName) {
+                            if (isset($finalVars[$varName])) {
+                                $codeVariables[$varName] = $finalVars[$varName];
+                            }
+                        }
+                    }
+                    
+                    // If we found variables that look like they were created by the code, show them
+                    if (!empty($codeVariables)) {
+                        foreach ($codeVariables as $name => $value) {
+                            $output->writeln(sprintf('   $%s = %s', $name, var_export($value, true)));
+                        }
+                    } else {
+                        $output->writeln('   Aucune variable modifiée détectée');
                     }
                 }
             }

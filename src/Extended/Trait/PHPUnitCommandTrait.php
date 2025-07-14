@@ -149,16 +149,14 @@ trait PHPUnitCommandTrait
             
             // Exclure les variables techniques de la fonction uniquement
             // Ne pas exclure 'result' car cela pourrait être une variable créée par le code de l'utilisateur
-            $excludeVars = ['code', 'context', 'shellVariables', 'allVariables', 'newVariables'];
+            $excludeVars = ['code', 'context', 'shellVariables', 'allVariables', 'newVariables', 'unifiedSync', 'syncService'];
             foreach ($excludeVars as $var) {
                 unset($newVariables[$var]);
             }
             
-            // Si 'result' est la valeur de retour de eval(), on doit la retirer uniquement si elle n'existait pas avant
-            if (isset($newVariables['result']) && !isset($allVariables['result'])) {
-                // C'est notre variable locale, on la retire
-                unset($newVariables['result']);
-            }
+            // Ne pas supprimer les variables créées par le code utilisateur
+            // Le code peut créer des variables comme $result, $data, etc.
+            // Ces variables doivent être conservées dans le contexte
             
             // Mettre à jour le contexte persistant
             $context = array_merge($context, $newVariables);
