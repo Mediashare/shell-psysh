@@ -15,6 +15,9 @@ init_test "Assert Commands - Version Enhanced"
 # TESTS DE BASE SIMPLIFIES
 # =============================================================================
 
+# Importer la fonction test_session_sync
+source "$SCRIPT_DIR/../../lib/func/test_session_sync_enhanced.sh"
+
 # Test 1: Assert avec condition simple
 test_session_sync "Assert condition simple" \
     --step "phpunit:assert '2 + 2 == 4'" --context phpunit --expect "Assertion réussie" --output-check contains

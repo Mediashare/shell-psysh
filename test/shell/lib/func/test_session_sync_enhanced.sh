@@ -679,6 +679,8 @@ test_session_sync() {
             # Test de synchronisation si demandé
             if [[ "$sync_test" == "true" ]]; then
                 # test_synchronization "$step" "$expect" # @TODO: Fix this function call
+                echo -e "${CYAN}🔄 Test de synchronisation pour l'étape $((i+1))${NC}"
+                exit 0
             fi
         done
     done

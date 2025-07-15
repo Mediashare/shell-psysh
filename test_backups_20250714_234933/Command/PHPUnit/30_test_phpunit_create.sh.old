@@ -1,0 +1,124 @@
+#!/bin/bash
+
+# Test 30: Commande phpunit:create avec architecture modulaire
+# Démonstration des capacités avancées de l'unified_test_executor
+
+# Obtenir le répertoire du script et charger l'exécuteur unifié
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source "$SCRIPT_DIR/../../lib/func/loader.sh"
+
+# Initialiser l'environnement de test
+init_test_environment
+init_test "TEST 30: Commande phpunit:create - Architecture avancée"
+
+# Étape 1: Créer un test simple
+test_monitor_multiline "Créer un test simple" \
+'phpunit:create UserService' \
+'✅ Test créé : UserService'
+
+# Étape 2: Créer un test avec classe spécifiée
+test_monitor_multiline "Créer un test avec classe" \
+'phpunit:create PaymentService --class App\\Service\\PaymentService' \
+'📋 Classe testée : App\\Service\\PaymentService'
+
+# Étape 3: Créer un test avec description
+test_monitor_multiline "Créer un test avec description" \
+'phpunit:create EmailService --description "Tests for email service functionality"' \
+'📄 Description : Tests for email service functionality'
+
+# Étape 4: Créer un test avec toutes les options
+test_monitor_multiline "Créer un test complet" \
+'phpunit:create OrderManager --class App\\Service\\OrderManager --description "Order management tests" --method testCreateOrder' \
+'🔧 Méthode initiale : testCreateOrder'
+
+# Étape 5: Vérifier que le test actuel est défini
+test_monitor_expression "Vérifier test actuel" \
+'echo isset($GLOBALS["phpunit_current_test"]) ? "Test actuel défini" : "Aucun test actuel"' \
+'Test actuel défini'
+
+# Étape 6: Créer un test avec nom invalide (test d'erreur)
+test_monitor_error "Nom de test invalide" \
+'phpunit:create 123InvalidName' \
+'❌'
+
+# Étape 7: Lister les tests créés
+test_monitor_multiline "Lister les tests" \
+'phpunit:list' \
+'UserService'
+
+# Étape 8: Créer un test avec namespace complexe
+test_monitor_multiline "Test avec namespace complexe" \
+'phpunit:create ComplexService --class App\\Domain\\User\\Service\\Registration\\EmailVerificationService' \
+'App\\Domain\\User\\Service\\Registration\\EmailVerificationService'
+
+# Étape 9: Overwrite d'un test existant
+test_monitor_multiline "Écraser un test existant" \
+'phpunit:create UserService --description "Updated description"' \
+'✅ Test créé : UserService'
+
+# Étape 10: Créer plusieurs tests et vérifier la liste
+test_monitor_multiline "Créer plusieurs tests" \
+'phpunit:create FirstTest
+phpunit:create SecondTest
+phpunit:list' \
+'FirstTest'
+
+# =============================================================================
+# TESTS AVANCÉS - Démonstration des nouvelles capacités
+# =============================================================================
+
+# Test avec retry automatique
+test_execute "Test avec retry" \
+"phpunit:create RetryTest" \
+"✅ Test créé" \
+--context=phpunit --retry=3 --timeout=10
+
+# Test avec vérification exacte
+test_execute "Vérification exacte du message" \
+"phpunit:create ExactTest" \
+"✅ Test créé : ExactTest" \
+--context=phpunit --output-check=exact
+
+# Test combiné avec synchronisation
+test_execute "Test de synchronisation PHPUnit" \
+"phpunit:create SyncTest" \
+"SyncTest" \
+--context=phpunit --sync-test
+
+# Test avec input depuis fichier temporaire
+echo 'phpunit:create FileTest --description "Test from file"' > /tmp/test_input.txt
+test_from_file "Test depuis fichier" "/tmp/test_input.txt" "Test créé"
+rm -f /tmp/test_input.txt
+
+# Test de combinaison de commandes
+test_combined_commands "Combinaison create + list" \
+"phpunit:create CombinedTest" \
+"phpunit:list" \
+"CombinedTest"
+
+# Test avec pattern d'erreur spécifique
+test_error_pattern "Pattern d'erreur spécifique" \
+"phpunit:create" \
+"Arguments manquants"
+
+# Test avec debug activé
+test_execute "Test avec debug" \
+"phpunit:create DebugTest" \
+"Test créé" \
+--context=phpunit --debug
+
+# Test de performance avec timeout court
+test_execute "Test de performance" \
+"phpunit:create PerfTest" \
+"Test créé" \
+--context=phpunit --timeout=5
+
+# Afficher le résumé
+test_summary
+
+# Sortir avec le code approprié
+if [[ $FAIL_COUNT -gt 0 ]]; then
+    exit 1
+else
+    exit 0
+fi

@@ -9,6 +9,8 @@ PROJECT_ROOT="$( cd "$SCRIPT_DIR/../../.." && pwd )"
 
 # Source les bibliothèques de test
 source "$SCRIPT_DIR/../../lib/func/loader.sh"
+# Charger test_session_sync
+source "$(dirname "$0")/../../lib/func/test_session_sync_enhanced.sh"
 
 # Initialiser le test
 init_test "TEST 24 Simple: Synchronisation rapide Shell <-> Monitor"

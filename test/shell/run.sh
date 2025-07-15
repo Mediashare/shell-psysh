@@ -89,94 +89,135 @@ wait_for_action() {
     return 0  # Enter or other key pressed
 }
 
-# Fonction pour générer une stack trace shell en analysant l'exécution
+# Fonction pour générer une stack trace shell RÉELLE et utilisable (compatible POSIX)
 generate_shell_stack_trace() {
     local temp_output=$1
     local main_test_file=$2
     
-    echo -e "   ${PURPLE}📂 Fichiers impliqués dans l'exécution:${NC}"
+    echo -e "   ${PURPLE}🔍 CALL STACK - Chemin d'exécution réel:${NC}"
     
-    # 1. Fichier de test principal
-    echo -e "   ${CYAN}├─ ${main_test_file}${NC} (Point d'entrée)"
-    
-    # 2. Chercher les sources/includes dans les logs
-    local sourced_files=$(grep -E "(source|\.|Loading|Sourcing)" "$temp_output" | grep -E "\.sh|\.bash" | head -5)
-    if [[ -n "$sourced_files" ]]; then
-        echo "$sourced_files" | while IFS= read -r line; do
-            local file_path=$(echo "$line" | sed -E 's/.*([a-zA-Z0-9_\/\.-]*\.sh).*/\1/')
-            if [[ -n "$file_path" && "$file_path" != "$line" ]]; then
-                echo -e "   ${CYAN}├─ $file_path${NC} (Sourcé/Inclus)"
-            fi
-        done
-    fi
-    
-    # 3. Analyser la structure des fichiers shell réellement utilisés
-    echo -e "\n   ${PURPLE}🔍 Analyse des fichiers shell détectés:${NC}"
-    
-    # Analyser le fichier de test principal
-    if [[ -f "$main_test_file" ]]; then
-        analyze_shell_file "$main_test_file" "$temp_output"
-    fi
-    
-    # Analyser les fichiers lib/ si détectés
-    local lib_files=$(find "$(dirname "$main_test_file")/../../lib" -name "*.sh" 2>/dev/null | head -3)
-    if [[ -n "$lib_files" ]]; then
-        echo "$lib_files" | while IFS= read -r lib_file; do
-            if [[ -f "$lib_file" ]]; then
-                analyze_shell_file "$lib_file" "$temp_output"
-            fi
-        done
-    fi
-    
-    # 4. Chercher des traces spécifiques dans les logs debug
-    echo -e "\n   ${PURPLE}🎯 Trace d'exécution basée sur les logs:${NC}"
-    local debug_traces=$(grep -n -E "(\[DEBUG\]|Etape [0-9]+|test_execute|monitor|phpunit:assert)" "$temp_output" | head -10)
-    if [[ -n "$debug_traces" ]]; then
-        echo "$debug_traces" | while IFS= read -r trace_line; do
+    # 1. Extraire la stack d'appels de fonctions depuis les logs TRACE
+    echo -e "   ${CYAN}📞 Pile des appels de fonctions:${NC}"
+    local call_stack=$(grep -n "\[TRACE\]" "$temp_output" | grep -E "(ENTER|EXIT)" | tail -10)
+    if [[ -n "$call_stack" ]]; then
+        echo "$call_stack" | while IFS= read -r trace_line; do
             local line_num=$(echo "$trace_line" | cut -d: -f1)
-            local content=$(echo "$trace_line" | cut -d: -f2- | sed 's/^[[:space:]]*//')
-            echo -e "   ${YELLOW}   Line $line_num: ${NC}$content"
+            local trace_content=$(echo "$trace_line" | cut -d: -f2- | sed 's/^[[:space:]]*//')
+            
+            # Extraire le fichier et la ligne d'appel avec sed
+            if echo "$trace_content" | grep -q "ENTER:"; then
+                local func_name=$(echo "$trace_content" | sed 's/.*ENTER: \([^|]*\).*/\1/' | sed 's/().*//g')
+                local file_info=$(echo "$trace_content" | sed -n 's/.*Fichier: \([^:]*\):\([0-9]*\).*/\1:\2/p')
+                if [[ -n "$file_info" ]]; then
+                    local file_name=$(echo "$file_info" | cut -d: -f1)
+                    local file_line=$(echo "$file_info" | cut -d: -f2)
+                    echo -e "   ${GREEN}   ↘ $func_name()${NC} ${CYAN}[$(basename "$file_name"):$file_line]${NC}"
+                else
+                    echo -e "   ${GREEN}   ↘ $func_name()${NC}"
+                fi
+            elif echo "$trace_content" | grep -q "EXIT:"; then
+                local func_name=$(echo "$trace_content" | sed 's/.*EXIT: \([^|]*\).*/\1/' | sed 's/().*//g')
+                local file_info=$(echo "$trace_content" | sed -n 's/.*Fichier: \([^:]*\):\([0-9]*\).*/\1:\2/p')
+                if [[ -n "$file_info" ]]; then
+                    local file_name=$(echo "$file_info" | cut -d: -f1)
+                    local file_line=$(echo "$file_info" | cut -d: -f2)
+                    echo -e "   ${RED}   ↙ $func_name()${NC} ${CYAN}[$(basename "$file_name"):$file_line]${NC}"
+                else
+                    echo -e "   ${RED}   ↙ $func_name()${NC}"
+                fi
+            fi
         done
+    else
+        echo -e "   ${YELLOW}   ⚠️ Aucune trace ENTER/EXIT détectée${NC}"
+    fi
+    
+    # 2. Séquence d'exécution avec contexte
+    echo -e "\n   ${PURPLE}⚡ Séquence d'exécution détaillée:${NC}"
+    local execution_sequence=$(grep -n -E "(\[DEBUG\] Command:|\[TRACE\].*Paramètres:|>>> Étape|❌ FAIL:|✅ PASS:)" "$temp_output" | head -15)
+    if [[ -n "$execution_sequence" ]]; then
+        echo "$execution_sequence" | while IFS= read -r exec_line; do
+            local line_num=$(echo "$exec_line" | cut -d: -f1)
+            local exec_content=$(echo "$exec_line" | cut -d: -f2- | sed 's/^[[:space:]]*//')
+            
+            # Formater selon le type de ligne
+            if echo "$exec_content" | grep -q "^\[DEBUG\] Command:"; then
+                local command=$(echo "$exec_content" | sed 's/^\[DEBUG\] Command: //')
+                echo -e "   ${BLUE}   🔧 EXEC: ${NC}$command ${CYAN}[ligne $line_num]${NC}"
+            elif echo "$exec_content" | grep -q "^\[TRACE\].*Paramètres:"; then
+                local params=$(echo "$exec_content" | sed 's/^\[TRACE\].*Paramètres: //')
+                echo -e "   ${YELLOW}   📋 PARAMS: ${NC}$params ${CYAN}[ligne $line_num]${NC}"
+            elif echo "$exec_content" | grep -q "^>>> Étape"; then
+                echo -e "   ${PURPLE}   📌 STEP: ${NC}$exec_content ${CYAN}[ligne $line_num]${NC}"
+            elif echo "$exec_content" | grep -q "^❌ FAIL:"; then
+                echo -e "   ${RED}   💥 FAIL: ${NC}$exec_content ${CYAN}[ligne $line_num]${NC}"
+            elif echo "$exec_content" | grep -q "^✅ PASS:"; then
+                echo -e "   ${GREEN}   ✅ PASS: ${NC}$exec_content ${CYAN}[ligne $line_num]${NC}"
+            fi
+        done
+    fi
+    
+    # 3. Analyse des fichiers shell réellement impliqués
+    echo -e "\n   ${PURPLE}📂 Fichiers shell impliqués:${NC}"
+    
+    # Extraire tous les fichiers mentionnés dans les traces
+    local involved_files=$(grep "Fichier:" "$temp_output" | sed 's/.*Fichier: \([^:]*\):[0-9]*.*/\1/' | sort -u)
+    if [[ -n "$involved_files" ]]; then
+        echo "$involved_files" | while IFS= read -r file_path; do
+            if [[ -f "$file_path" ]]; then
+                echo -e "   ${CYAN}   📄 $(basename "$file_path")${NC} ${GRAY}[$file_path]${NC}"
+                # Montrer les fonctions de ce fichier qui sont appelées
+                local file_functions=$(grep "Fichier: $file_path" "$temp_output" | grep "ENTER:" | sed 's/.*ENTER: \([^|]*\).*/\1/' | sed 's/().*//g' | sort -u)
+                if [[ -n "$file_functions" ]]; then
+                    echo "$file_functions" | while IFS= read -r func_name; do
+                        echo -e "   ${GREEN}     ↳ $func_name()${NC}"
+                    done
+                fi
+            fi
+        done
+    fi
+    
+    # 4. Point d'erreur précis avec stack
+    echo -e "\n   ${PURPLE}💥 Point d'erreur avec contexte:${NC}"
+    local error_context=$(grep -B 5 -A 5 -E "(RuntimeException|Fatal error|command not found|syntax error)" "$temp_output" | head -20)
+    if [[ -n "$error_context" ]]; then
+        echo "$error_context" | nl -w3 -s': ' | while IFS= read -r context_line; do
+            if echo "$context_line" | grep -qE "(RuntimeException|Fatal error|command not found|syntax error)"; then
+                echo -e "   ${RED}   → $context_line${NC}"
+            elif echo "$context_line" | grep -qE "(\[TRACE\]|\[DEBUG\])"; then
+                echo -e "   ${YELLOW}   $context_line${NC}"
+            else
+                echo -e "   ${GRAY}   $context_line${NC}"
+            fi
+        done
+    else
+        echo -e "   ${YELLOW}   ⚠️ Point d'erreur non identifié dans les logs${NC}"
+    fi
+    
+    # 5. Chemin d'exécution reconstruit
+    echo -e "\n   ${PURPLE}🗺️ Chemin d'exécution reconstruit:${NC}"
+    local execution_path=$(grep -n "\[TRACE\]" "$temp_output" | grep -E "(ENTER|Appelé depuis)" | tail -8)
+    if [[ -n "$execution_path" ]]; then
+        echo "$execution_path" | while IFS= read -r path_line; do
+            local line_num=$(echo "$path_line" | cut -d: -f1)
+            local path_content=$(echo "$path_line" | cut -d: -f2- | sed 's/^[[:space:]]*//')
+            
+            if echo "$path_content" | grep -q "Appelé depuis:"; then
+                local caller_info=$(echo "$path_content" | sed 's/.*Appelé depuis: \([^:]*\):\([0-9]*\).*/\1:\2/')
+                if [[ -n "$caller_info" && "$caller_info" != "$path_content" ]]; then
+                    local caller_file=$(echo "$caller_info" | cut -d: -f1)
+                    local caller_line=$(echo "$caller_info" | cut -d: -f2)
+                    echo -e "   ${BLUE}   📍 Called from: ${NC}$(basename "$caller_file"):$caller_line ${CYAN}[output ligne $line_num]${NC}"
+                fi
+            elif echo "$path_content" | grep -q "ENTER:"; then
+                local func_name=$(echo "$path_content" | sed 's/.*ENTER: \([^|]*\).*/\1/' | sed 's/().*//g')
+                echo -e "   ${GREEN}   🔄 Entering: ${NC}$func_name() ${CYAN}[output ligne $line_num]${NC}"
+            fi
+        done
+    else
+        echo -e "   ${YELLOW}   ⚠️ Chemin d'exécution non tracé${NC}"
     fi
 }
 
-# Fonction pour analyser un fichier shell spécifique
-analyze_shell_file() {
-    local file_path=$1
-    local temp_output=$2
-    local file_name=$(basename "$file_path")
-    
-    echo -e "   ${BLUE}📄 $file_name${NC}"
-    
-    # Chercher les fonctions définies dans ce fichier
-    if [[ -f "$file_path" ]]; then
-        local functions=$(grep -n "^[a-zA-Z_][a-zA-Z0-9_]*()" "$file_path" | head -5)
-        if [[ -n "$functions" ]]; then
-            echo "$functions" | while IFS= read -r func_line; do
-                local line_num=$(echo "$func_line" | cut -d: -f1)
-                local func_name=$(echo "$func_line" | cut -d: -f2 | sed 's/()[[:space:]]*{.*//' | sed 's/^[[:space:]]*//')
-                
-                # Vérifier si cette fonction apparaît dans les logs
-                if grep -q "$func_name" "$temp_output" 2>/dev/null; then
-                    echo -e "   ${GREEN}   ✓ $func_name() [ligne $line_num] - UTILISÉE${NC}"
-                else
-                    echo -e "   ${CYAN}   - $func_name() [ligne $line_num]${NC}"
-                fi
-            done
-        fi
-        
-        # Chercher les appels source/include
-        local includes=$(grep -n "^[[:space:]]*source\|^[[:space:]]*\." "$file_path" | head -3)
-        if [[ -n "$includes" ]]; then
-            echo -e "   ${CYAN}   📥 Inclusions détectées:${NC}"
-            echo "$includes" | while IFS= read -r inc_line; do
-                local line_num=$(echo "$inc_line" | cut -d: -f1)
-                local inc_file=$(echo "$inc_line" | cut -d: -f2- | sed 's/.*["\047]\([^"\047]*\)["\047].*/\1/' | sed 's/.*[[:space:]]\([^[:space:]]*\)$/\1/')
-                echo -e "   ${CYAN}     → ligne $line_num: $inc_file${NC}"
-            done
-        fi
-    fi
-}
 
 # Fonction pour exécuter un test en mode simple
 run_test_simple() {
@@ -225,9 +266,9 @@ run_test_simple() {
         failed_steps=${failed_steps//[[:space:]]/}
         
         # Ensure we have valid numeric values (default to 0 if empty or invalid)
-        [[ "$total_steps" =~ ^[0-9]+$ ]] || total_steps=0
-        [[ "$passed_steps" =~ ^[0-9]+$ ]] || passed_steps=0
-        [[ "$failed_steps" =~ ^[0-9]+$ ]] || failed_steps=0
+        case "$total_steps" in ''|*[!0-9]*) total_steps=0;; esac
+        case "$passed_steps" in ''|*[!0-9]*) passed_steps=0;; esac
+        case "$failed_steps" in ''|*[!0-9]*) failed_steps=0;; esac
         
         # Update to reflect accurate step stats
         step_stats=" (${passed_steps}/${failed_steps}/${total_steps} étapes)"
@@ -248,19 +289,19 @@ run_test_simple() {
             # Extraire les étapes qui ont échoué avec leur contexte complet
             echo -e "\n${RED}📋 ÉTAPES EN ÉCHEC:${NC}"
             grep -B2 -A10 "❌ FAIL:" "$temp_output" | while IFS= read -r line; do
-                if [[ "$line" =~ ^❌\ FAIL: ]]; then
+                if echo "$line" | grep -q "^❌ FAIL:"; then
                     echo -e "   ${RED}● ${line#❌ FAIL: }${NC}"
-                elif [[ "$line" =~ ^\>\>\>\ Étape ]]; then
+                elif echo "$line" | grep -q "^>>> Étape"; then
                     echo -e "   ${BLUE}📌 ${line}${NC}"
-                elif [[ "$line" =~ ^Code\ monitor: ]]; then
+                elif echo "$line" | grep -q "^Code monitor:"; then
                     echo -e "   ${CYAN}📝 INPUT:${NC} ${line#Code monitor: }"
-                elif [[ "$line" =~ ^Sortie\ du\ test: ]]; then
+                elif echo "$line" | grep -q "^Sortie du test:"; then
                     echo -e "   ${GREEN}📤 OUTPUT:${NC} ${line#Sortie du test: }"
-                elif [[ "$line" =~ ^Résultat\ attendu: ]]; then
+                elif echo "$line" | grep -q "^Résultat attendu:"; then
                     echo -e "   ${YELLOW}🎯 EXPECTED:${NC} ${line#Résultat attendu: }"
-                elif [[ "$line" =~ ^Résultat\ obtenu: ]]; then
+                elif echo "$line" | grep -q "^Résultat obtenu:"; then
                     echo -e "   ${RED}❌ ACTUAL:${NC} ${line#Résultat obtenu: }"
-                elif [[ "$line" =~ ^Pattern\ d.erreur: ]]; then
+                elif echo "$line" | grep -q "^Pattern d'erreur:"; then
                     echo -e "   ${PURPLE}🔍 ERROR PATTERN:${NC} ${line#Pattern d\'erreur: }"
                 fi
             done
@@ -268,7 +309,7 @@ run_test_simple() {
             echo ""
             echo -e "${BLUE}🔧 COMMANDES EXÉCUTÉES:${NC}"
             grep -E "(\$PSYSH_CMD|echo \"Étape|phpunit:)" "$temp_output" | tail -5 | while IFS= read -r line; do
-                if [[ "$line" =~ ^echo\ \"Étape ]]; then
+                if echo "$line" | grep -q "^echo \"Étape"; then
                     echo -e "   ${CYAN}🏷️  ${line}${NC}"
                 else
                     echo -e "   ${BLUE}⚡ ${line}${NC}"
@@ -293,7 +334,7 @@ run_test_simple() {
                     # Déterminer le type d'erreur
                     local error_type="SHELL"
                     local error_source="Script shell"
-                    if [[ "$error_content" =~ (syntax\ error|Parse\ error|Fatal\ error|Call\ to\ undefined) ]]; then
+                    if echo "$error_content" | grep -qE "(syntax error|Parse error|Fatal error|Call to undefined)"; then
                         error_type="PHP"
                         error_source="Code PHP exécuté"
                     fi
@@ -371,10 +412,10 @@ run_test_simple() {
             warning_count=${warning_count//[[:space:]]/}
             
             # Ensure we have valid numeric values (default to 0 if empty or invalid)
-            [[ "$test_count" =~ ^[0-9]+$ ]] || test_count=0
-            [[ "$fail_count" =~ ^[0-9]+$ ]] || fail_count=0
-            [[ "$pass_count" =~ ^[0-9]+$ ]] || pass_count=0
-            [[ "$warning_count" =~ ^[0-9]+$ ]] || warning_count=0
+            case "$test_count" in ''|*[!0-9]*) test_count=0;; esac
+            case "$fail_count" in ''|*[!0-9]*) fail_count=0;; esac
+            case "$pass_count" in ''|*[!0-9]*) pass_count=0;; esac
+            case "$warning_count" in ''|*[!0-9]*) warning_count=0;; esac
             echo -e "   ${CYAN}📊 Total étapes: ${test_count} | ✅ Réussies: ${pass_count} | ❌ Échouées: ${fail_count}${NC}"
             
             if [[ $warning_count -gt 0 ]]; then

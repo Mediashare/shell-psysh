@@ -15,7 +15,7 @@
 #   --expect "result"     : résultat attendu
 #   --context TYPE        : monitor, phpunit, shell, psysh, mixed
 #   --input-type TYPE     : pipe, file, echo, interactive, multiline
-#   --output-check TYPE   : contains, exact, regex, json, error, not_contains
+#   --output-check TYPE   : contains, exact, regex, json, error, not-contains
 #   --timeout SECONDS     : timeout pour l'exécution
 #   --retry COUNT         : nombre de tentatives en cas d'échec
 #   --sync-test          : active le test de synchronisation bidirectionnelle
@@ -410,8 +410,14 @@ test_session_sync() {
                     step="monitor \"$step\""
                 fi
                 ;;
+            "psysh")
+                # Commande dans PsySH
+                ;;
             "shell")
-                # Commande shell directe dans PsySH
+                # Commande shell
+                ;;
+            "mixed")
+                # Commande dans le shell ou PsySH
                 ;;
         esac
         

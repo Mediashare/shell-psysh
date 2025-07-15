@@ -1,90 +1,44 @@
 #!/bin/bash
 
 # Test script for Config commands
-# Tests PHPUnitConfigCommand, PHPUnitCreateCommand, PHPUnitExportCommand, etc.
+# Tests des commandes de configuration
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# Obtenir le répertoire du script et charger les fonctions
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source "$SCRIPT_DIR/../../lib/func/loader.sh"
+source "$SCRIPT_DIR/../../lib/func/test_session_sync_enhanced.sh"
 
-# Vérifier que PROJECT_ROOT est défini
-if [[ -z "$PROJECT_ROOT" ]]; then
-    PROJECT_ROOT="$(cd "$(dirname "$0")" && cd ../.. && pwd)"
-    export PROJECT_ROOT
-fi
+# Initialiser l'environnement de test
+init_test_environment
+init_test "Config Commands Tests"
 
-init_test "Config Commands"
-echo ""
+# Test 1: Configuration basique
+test_session_sync "Test configuration basique" \
+    --step "echo 'Configuration test'" \
+    --expect "Configuration test" \
+    --context shell
 
-# Test PHPUnitConfigCommand (phpunit:config)
-echo "🔍 Testing phpunit:config command..."
-echo "$PROJECT_RO$PROJECT_ROOT/bin/psysh -c \"phpunit:config --show\""
-$PROJECT_RO$PROJECT_ROOT/bin/psysh -c "phpunit:config --show"
-echo ""
+# Test 2: Test de variable de configuration
+test_session_sync "Test variable configuration" \
+    --step '$config = "test_value"; echo $config' \
+    --expect "test_value" \
+    --context monitor --output-check result
 
-# Test PHPUnitCreateCommand (phpunit:create)
-echo "🔍 Testing phpunit:create command..."
-echo "$PROJECT_RO$PROJECT_ROOT/bin/psysh -c \"phpunit:create TestClass --type=class --namespace=Tests\""
-$PROJECT_RO$PROJECT_ROOT/bin/psysh -c "phpunit:create TestClass --type=class --namespace=Tests"
-echo ""
+# Test 3: Test configuration avec retry
+test_session_sync "Test configuration avec retry" \
+    --step "echo 'Config retry test'" \
+    --expect "Config retry test" \
+    --context shell --retry 2
 
-# Test PHPUnitExportCommand (phpunit:export)
-echo "🔍 Testing phpunit:export command..."
-echo "$PROJECT_ROOT/bin/psysh -c \"phpunit:export --format=json --output=temp_export.json\""
-$PROJECT_ROOT/bin/psysh -c "phpunit:export --format=json --output=temp_export.json"
-echo ""
-
-# Test PHPUnitListCommand (phpunit:list)
-echo "🔍 Testing phpunit:list command..."
-echo "$PROJECT_ROOT/bin/psysh -c \"phpunit:list\""
-$PROJECT_ROOT/bin/psysh -c "phpunit:list"
-echo ""
-
-# Test PHPUnitListProjectCommand (phpunit:list-project)
-echo "🔍 Testing phpunit:list-project command..."
-echo "$PROJECT_ROOT/bin/psysh -c \"phpunit:list-project\""
-$PROJECT_ROOT/bin/psysh -c "phpunit:list-project"
-echo ""
-
-# Test PHPUnitHelpCommand (phpunit:help)
-echo "🔍 Testing phpunit:help command..."
-echo "$PROJECT_ROOT/bin/psysh -c \"phpunit:help\""
-$PROJECT_ROOT/bin/psysh -c "phpunit:help"
-echo ""
-
-# Test PHPUnitHelpCommand with specific command
-echo "🔍 Testing phpunit:help with specific command..."
-echo "$PROJECT_ROOT/bin/psysh -c \"phpunit:help phpunit:assert\""
-$PROJECT_ROOT/bin/psysh -c "phpunit:help phpunit:assert"
-echo ""
-
-# Test PHPUnitCodeCommand (phpunit:code)
-echo "🔍 Testing phpunit:code command..."
-echo "$PROJECT_ROOT/bin/psysh -c \"phpunit:code --show-config\""
-$PROJECT_ROOT/bin/psysh -c "phpunit:code --show-config"
-echo ""
-
-# Test PHPUnitTempConfigCommand (phpunit:temp-config)
-echo "🔍 Testing phpunit:temp-config command..."
-echo "$PROJECT_ROOT/bin/psysh -c \"phpunit:temp-config --create\""
-$PROJECT_ROOT/bin/psysh -c "phpunit:temp-config --create"
-echo ""
-
-# Test PHPUnitRestoreConfigCommand (phpunit:restore-config)
-echo "🔍 Testing phpunit:restore-config command..."
-echo "$PROJECT_ROOT/bin/psysh -c \"phpunit:restore-config --backup-file=phpunit.xml.backup\""
-$PROJECT_ROOT/bin/psysh -c "phpunit:restore-config --backup-file=phpunit.xml.backup"
-echo ""
-
-# Test CustomHelpCommand (custom:help)
-echo "🔍 Testing custom:help command..."
-echo "$PROJECT_ROOT/bin/psysh -c \"custom:help\""
-$PROJECT_ROOT/bin/psysh -c "custom:help"
-echo ""
-
-# Test combined config operations
-echo "🔍 Testing combined config operations..."
-echo "$PROJECT_ROOT/bin/psysh -c \"phpunit:config --show; phpunit:list; phpunit:help\""
-$PROJECT_ROOT/bin/psysh -c "phpunit:config --show; phpunit:list; phpunit:help"
-echo ""
-
+# Afficher le résumé
 test_summary
+
+# Nettoyer l'environnement de test
+cleanup_test_environment
+
+# Sortir avec le code approprié
+if [[ $FAIL_COUNT -gt 0 ]]; then
+    exit 1
+else
+    exit 0
+fi

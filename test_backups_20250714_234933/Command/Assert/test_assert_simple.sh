@@ -1,0 +1,86 @@
+#!/bin/bash
+
+# Test script simple pour Assert commands - Version de base
+# Utilise uniquement les fonctions de base qui marchent bien
+
+# Obtenir le répertoire du script et charger l'exécuteur unifié
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source "$SCRIPT_DIR/../../lib/func/loader.sh"
+
+# Initialiser l'environnement de test
+init_test_environment
+init_test "Assert Commands - Tests de Base"
+
+# =============================================================================
+# TESTS DE BASE - Fonctions qui marchent
+# =============================================================================
+
+# Test 1: Assert avec condition simple
+test_execute "Assert condition simple" \
+    "phpunit:assert '2 + 2 == 4'" \
+    "Assertion réussie" \
+    --context=phpunit --output-check=contains
+
+# Test 2: Assert booléen true
+test_execute "Assert booléen true" \
+    "phpunit:assert 'true'" \
+    "Assertion réussie" \
+    --context=phpunit
+
+# Test 3: Assert booléen false (erreur attendue)
+test_execute "Assert booléen false" \
+    "phpunit:assert 'false'" \
+    "Assertion échouée" \
+    --context=phpunit --output-check=error
+
+# Test 4: Test phpunit simple
+test_phpunit "Test phpunit simple" \
+    "phpunit:assert '3 * 3 == 9'" \
+    "Assertion réussie"
+
+# Test 5: Test avec retry
+test_session_sync "Assert avec retry" \
+   --step '$result = 42' --context 'psysh' --expect '42' \
+   --step "phpunit:assert '$result === 42'" --context 'phpunit' --expect "Assertion réussie" \
+   --retry=2 --timeout=10
+
+# Test 6: Test avec debug
+test_execute "Assert avec debug" \
+    "phpunit:assert 'false'" \
+    "Assertion échouée" \
+    --context=phpunit --debug --output-check=error
+
+# Test 7: Test avec timeout
+test_execute "Assert avec timeout" \
+    "phpunit:assert 'true'" \
+    "Assertion réussie" \
+    --context=phpunit --timeout=5
+
+# Test 8: Test monitor expression simple
+test_monitor_expression "Test monitor expression simple" \
+    "monitor 'echo \"Hello World\"'" \
+    "Hello World"
+
+# Test 9: Test d'erreur monitor
+test_monitor_error "Test erreur monitor" \
+    "invalid_php_function()" \
+    "Call to undefined function"
+
+# Test 10: Test shell responsiveness
+test_shell_responsiveness "Test shell responsiveness" \
+    "echo 'test'" \
+    "echo 'test'" \
+    "test"
+
+# Afficher le résumé
+test_summary
+
+# Nettoyer l'environnement de test
+cleanup_test_environment
+
+# Sortir avec le code approprié
+if [[ $FAIL_COUNT -gt 0 ]]; then
+    exit 1
+else
+    exit 0
+fi

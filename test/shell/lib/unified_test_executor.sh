@@ -426,6 +426,9 @@ check_result() {
         "not_contains")
             [[ "$result" != *"$expected"* ]]
             ;;
+        "not-contains")
+            [[ "$result" != *"$expected"* ]]
+            ;;
         *)
             [[ "$result" == *"$expected"* ]]
             ;;

@@ -263,18 +263,6 @@ test_monitor_error() {
         --context=monitor --output-check=error
 }
 
-# Legacy function for test_phpunit
-test_phpunit() {
-    local description="$1"
-    local assertion="$2"
-    local expected="$3"
-    
-    test_execute "$description" \
-        "phpunit:assert '$assertion'" \
-        "$expected" \
-        --context=phpunit
-}
-
 # Legacy function for test_shell_responsiveness
 test_shell_responsiveness() {
     local description="$1"
@@ -344,7 +332,7 @@ test_error_pattern() {
 
 # Export des fonctions principales pour utilisation dans les scripts de test
 export -f test_execute test_monitor test_monitor_multiline test_monitor_expression
-export -f test_monitor_error test_shell_responsiveness test_phpunit
+export -f test_monitor_error test_shell_responsiveness
 export -f test_combined_commands test_from_file test_error_pattern
 export -f init_test_environment cleanup_test_environment init_test test_summary
 
