@@ -505,6 +505,11 @@ test_session_sync() {
         done
     fi
     
+    # Activer le mode debug global si DEBUG_MODE est défini
+    if [[ "$DEBUG_MODE" == "1" ]]; then
+        global_debug=true
+    fi
+    
     # Métriques de performance
     local start_time=$(date +%s.%N)
     local step_times=()
@@ -874,6 +879,73 @@ test_session_sync() {
                 if [[ "$quiet" != "true" ]]; then
                     echo -e "${RED}Expected: $expect${NC}"
                     echo -e "${RED}Got: $step_result${NC}"
+                fi
+                
+                # Affichage détaillé de debug si activé
+                if [[ "$debug" == "true" || "$global_debug" == "true" ]]; then
+                    echo -e "${CYAN}╭─ DEBUG INFO - Étape $((i+1)) FAILED ─╮${NC}"
+                    echo -e "${CYAN}│ Commande: $actual_step${NC}"
+                    echo -e "${CYAN}│ Contexte: $context${NC}"
+                    echo -e "${CYAN}│ Tag: $tag_name${NC}"
+                    echo -e "${CYAN}│ Timeout: ${timeout}s${NC}"
+                    echo -e "${CYAN}│ Tentatives: $attempt/$retry${NC}"
+                    
+                    if [[ -n "$setup" ]]; then
+                        echo -e "${CYAN}│ Setup: $setup${NC}"
+                    fi
+                    if [[ -n "$cleanup" ]]; then
+                        echo -e "${CYAN}│ Cleanup: $cleanup${NC}"
+                    fi
+                    if [[ -n "$mock" ]]; then
+                        echo -e "${CYAN}│ Mock: $mock${NC}"
+                    fi
+                    if [[ -n "$input_file" ]]; then
+                        echo -e "${CYAN}│ Input file: $input_file${NC}"
+                    fi
+                    if [[ -n "$output_file" ]]; then
+                        echo -e "${CYAN}│ Output file: $output_file${NC}"
+                    fi
+                    
+                    echo -e "${CYAN}│ Sortie complète:${NC}"
+                    echo "$step_result" | while IFS= read -r line; do
+                        echo -e "${CYAN}│   $line${NC}"
+                    done
+                    
+                    if [[ -n "$expect" ]]; then
+                        echo -e "${CYAN}│ Comparaison ($output_check):${NC}"
+                        echo -e "${CYAN}│   Attendu: $expect${NC}"
+                        echo -e "${CYAN}│   Obtenu:  $step_result${NC}"
+                        
+                        # Analyse de la différence
+                        case "$output_check" in
+                            "exact")
+                                if [[ "$step_result" == "$expect" ]]; then
+                                    echo -e "${CYAN}│   Match: exact (OK)${NC}"
+                                else
+                                    echo -e "${CYAN}│   Match: exact (FAIL)${NC}"
+                                    echo -e "${CYAN}│   Différence: caractères différents${NC}"
+                                fi
+                                ;;
+                            "contains")
+                                if [[ "$step_result" == *"$expect"* ]]; then
+                                    echo -e "${CYAN}│   Match: contains (OK)${NC}"
+                                else
+                                    echo -e "${CYAN}│   Match: contains (FAIL)${NC}"
+                                    echo -e "${CYAN}│   '$expect' non trouvé dans '$step_result'${NC}"
+                                fi
+                                ;;
+                            "regex")
+                                if [[ "$step_result" =~ $expect ]]; then
+                                    echo -e "${CYAN}│   Match: regex (OK)${NC}"
+                                else
+                                    echo -e "${CYAN}│   Match: regex (FAIL)${NC}"
+                                    echo -e "${CYAN}│   Pattern '$expect' ne correspond pas à '$step_result'${NC}"
+                                fi
+                                ;;
+                        esac
+                    fi
+                    
+                    echo -e "${CYAN}╰─────────────────────────────────────────────────╯${NC}"
                 fi
                 
                 if [[ "$skip_on_fail" == "true" ]]; then

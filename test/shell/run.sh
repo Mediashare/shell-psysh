@@ -239,7 +239,7 @@ run_test_simple() {
     # Exporter les variables nécessaires pour les sous-scripts
     
     # Exécuter le test et capturer le code de retour
-    ./$test_file > "$temp_output" 2>&1
+    env DEBUG_MODE="$DEBUG_MODE" ./$test_file > "$temp_output" 2>&1
     local exit_code=$?
     
     # Capturer les détails du test et extraire les statistiques
@@ -278,169 +278,8 @@ run_test_simple() {
         fi
     fi
     
-    # Mode debug: afficher les détails complets du test
-    if [[ $DEBUG_MODE == "1" && $exit_code -ne 0 ]]; then
-        echo -e "\n${CYAN}╔═══════════════════════════════════════════════════════════════════════════════╗${NC}"
-        echo -e "${CYAN}║${NC}                           ${YELLOW}MODE DEBUG ACTIVÉ${NC}                               ${CYAN}║${NC}"
-        echo -e "${CYAN}║${NC} Fichier: ${GREEN}$test_file${NC} (Exit: ${RED}$exit_code${NC})                        ${CYAN}║${NC}"
-        echo -e "${CYAN}╚═══════════════════════════════════════════════════════════════════════════════╝${NC}"
-        
-        if [[ -f "$temp_output" ]]; then
-            # Extraire les étapes qui ont échoué avec leur contexte complet
-            echo -e "\n${RED}📋 ÉTAPES EN ÉCHEC:${NC}"
-            grep -B2 -A10 "❌ FAIL:" "$temp_output" | while IFS= read -r line; do
-                if echo "$line" | grep -q "^❌ FAIL:"; then
-                    echo -e "   ${RED}● ${line#❌ FAIL: }${NC}"
-                elif echo "$line" | grep -q "^>>> Étape"; then
-                    echo -e "   ${BLUE}📌 ${line}${NC}"
-                elif echo "$line" | grep -q "^Code monitor:"; then
-                    echo -e "   ${CYAN}📝 INPUT:${NC} ${line#Code monitor: }"
-                elif echo "$line" | grep -q "^Sortie du test:"; then
-                    echo -e "   ${GREEN}📤 OUTPUT:${NC} ${line#Sortie du test: }"
-                elif echo "$line" | grep -q "^Résultat attendu:"; then
-                    echo -e "   ${YELLOW}🎯 EXPECTED:${NC} ${line#Résultat attendu: }"
-                elif echo "$line" | grep -q "^Résultat obtenu:"; then
-                    echo -e "   ${RED}❌ ACTUAL:${NC} ${line#Résultat obtenu: }"
-                elif echo "$line" | grep -q "^Pattern d'erreur:"; then
-                    echo -e "   ${PURPLE}🔍 ERROR PATTERN:${NC} ${line#Pattern d\'erreur: }"
-                fi
-            done
-            
-            echo ""
-            echo -e "${BLUE}🔧 COMMANDES EXÉCUTÉES:${NC}"
-            grep -E "(\$PSYSH_CMD|echo \"Étape|phpunit:)" "$temp_output" | tail -5 | while IFS= read -r line; do
-                if echo "$line" | grep -q "^echo \"Étape"; then
-                    echo -e "   ${CYAN}🏷️  ${line}${NC}"
-                else
-                    echo -e "   ${BLUE}⚡ ${line}${NC}"
-                fi
-            done
-            
-            # Afficher les erreurs système ou PHP si présentes avec leur contexte
-            echo ""
-            echo -e "${RED}🚨 ERREURS DÉTECTÉES lors de l'exécution de ${YELLOW}$(basename "$test_file")${RED}:${NC}"
-            
-            # Générer une stack trace shell si possible
-            echo -e "\n${BLUE}🔍 STACK TRACE - Chemin d'exécution:${NC}"
-            generate_shell_stack_trace "$temp_output" "$test_file"
-            local has_errors=false
-            local error_num=1
-            while IFS= read -r line; do
-                if [[ -n "$line" ]]; then
-                    # Extraire le numéro de ligne et le contenu de l'erreur
-                    local output_line_num=$(echo "$line" | cut -d: -f1)
-                    local error_content=$(echo "$line" | cut -d: -f2-)
-                    
-                    # Déterminer le type d'erreur
-                    local error_type="SHELL"
-                    local error_source="Script shell"
-                    if echo "$error_content" | grep -qE "(syntax error|Parse error|Fatal error|Call to undefined)"; then
-                        error_type="PHP"
-                        error_source="Code PHP exécuté"
-                    fi
-                    
-                    echo -e "   ${RED}💥 [#$error_num] ${error_source} (ligne de sortie $output_line_num):${NC}"
-                    echo -e "   ${RED}   ${error_content}${NC}"
-                    
-                    # Chercher la commande qui a causé cette erreur
-                    local safe_pattern=$(echo "$error_content" | sed 's/.*RuntimeException/RuntimeException/' | sed 's/\[/\\[/g' | sed 's/\]/\\]/g' | sed 's/"/\\"/g')
-                    
-                    # Afficher le contexte autour de l'erreur dans la sortie
-                    local start_line=$((output_line_num - 3))
-                    local end_line=$((output_line_num + 3))
-                    if [[ $start_line -lt 1 ]]; then start_line=1; fi
-                    
-                    local error_context=$(sed -n "${start_line},${end_line}p" "$temp_output" 2>/dev/null | nl -v$start_line -w3 -s': ')
-                    if [[ -n "$error_context" ]]; then
-                        echo -e "   ${CYAN}🔍 Contexte de sortie (lignes $start_line-$end_line):${NC}"
-                        echo "$error_context" | while IFS= read -r context_line; do
-                            if echo "$context_line" | grep -q "$output_line_num:"; then
-                                echo -e "      ${RED}→ $context_line${NC}"  # Ligne d'erreur en rouge
-                            else
-                                echo -e "      $context_line"
-                            fi
-                        done
-                    fi
-                    
-                    # Chercher et afficher la commande PHP qui a causé l'erreur
-                    if [[ "$error_type" == "PHP" ]]; then
-                        # Rechercher la dernière commande monitor ou phpunit avant l'erreur
-                        local php_command=$(sed -n "1,${output_line_num}p" "$temp_output" | grep -E "(monitor|phpunit:assert)" | tail -1)
-                        if [[ -n "$php_command" ]]; then
-                            # Extraire juste le code PHP
-                            local clean_php=$(echo "$php_command" | sed -E 's/.*(monitor|phpunit:assert)[[:space:]]*[\"'\'']([^\"'\'']*)[\"\''].*/\2/' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
-                            if [[ -n "$clean_php" && "$clean_php" != "$php_command" ]]; then
-                                echo -e "   ${YELLOW}📝 Code PHP qui a échoué: ${NC}${CYAN}$clean_php${NC}"
-                            fi
-                        fi
-                        
-                        # Chercher l'étape de test correspondante
-                        local test_step=$(sed -n "1,${output_line_num}p" "$temp_output" | grep -E ">>> Étape [0-9]+:" | tail -1)
-                        if [[ -n "$test_step" ]]; then
-                            echo -e "   ${BLUE}📋 $test_step${NC}"
-                        fi
-                    else
-                        # Pour les erreurs shell, chercher la commande associée
-                        local associated_command=$(grep -B 3 -A 1 -F "$safe_pattern" "$temp_output" 2>/dev/null | grep -E "(\\[DEBUG\\] Command:|Command:|monitor|phpunit:)" | head -1 | sed 's/.*Command: //' | sed 's/\\[DEBUG\\] Etape [0-9]\\* - //' || echo "")
-                        if [[ -n "$associated_command" ]]; then
-                            echo -e "   ${YELLOW}📝 Commande associée: ${associated_command}${NC}"
-                        fi
-                    fi
-                    
-                    echo ""  # Ligne vide entre les erreurs
-                    has_errors=true
-                    ((error_num++))
-                fi
-            done < <(grep -n -E "(RuntimeException|PARSE ERROR|Fatal error|Warning:|Notice:|Error:|command not found|No such file)" "$temp_output" | head -3)
-            
-            if [[ "$has_errors" == "false" ]]; then
-                echo -e "   ${GREEN}✓ Aucune erreur système détectée${NC}"
-            fi
-            
-            # Afficher un résumé des comparaisons d'assertions
-            echo ""
-            echo -e "${PURPLE}🧪 RÉSUMÉ DES ASSERTIONS:${NC}"
-            local test_count=$(grep -c ">>> Étape\|>>> Test" "$temp_output" 2>/dev/null || echo "0")
-            local fail_count=$(grep -c "❌ FAIL:" "$temp_output" 2>/dev/null || echo "0")
-            local pass_count=$(grep -c "✅ PASS:" "$temp_output" 2>/dev/null || echo "0")
-            local warning_count=$(grep -c "⚠️" "$temp_output" 2>/dev/null || echo "0")
-            
-            # Remove any potential newlines from the variables
-            test_count=${test_count//[[:space:]]/}
-            fail_count=${fail_count//[[:space:]]/}
-            pass_count=${pass_count//[[:space:]]/}
-            warning_count=${warning_count//[[:space:]]/}
-            
-            # Ensure we have valid numeric values (default to 0 if empty or invalid)
-            case "$test_count" in ''|*[!0-9]*) test_count=0;; esac
-            case "$fail_count" in ''|*[!0-9]*) fail_count=0;; esac
-            case "$pass_count" in ''|*[!0-9]*) pass_count=0;; esac
-            case "$warning_count" in ''|*[!0-9]*) warning_count=0;; esac
-            echo -e "   ${CYAN}📊 Total étapes: ${test_count} | ✅ Réussies: ${pass_count} | ❌ Échouées: ${fail_count}${NC}"
-            
-            if [[ $warning_count -gt 0 ]]; then
-                echo -e "   ${YELLOW}⚠️  Avertissements détectés: ${warning_count}${NC}"
-            fi
-            
-            # Alerte de cohérence dans le debug
-            if [[ $exit_code -eq 0 && $fail_count -gt 0 ]]; then
-                echo -e "   ${RED}🚨 INCOHÉRENCE: Test marqué SUCCESS mais contient des échecs!${NC}"
-            elif [[ $exit_code -ne 0 && $pass_count -gt 0 && $fail_count -eq 0 ]]; then
-                echo -e "   ${YELLOW}🤔 SUSPECT: Test marqué FAIL mais toutes les étapes ont réussi${NC}"
-            fi
-            
-            # Si c'est un test PHPUnit, afficher les infos spécifiques
-            if [[ "$test_file" == *"phpunit"* ]]; then
-                echo ""
-                echo -e "${GREEN}🧪 CONTEXTE PHPUNIT:${NC}"
-                grep -E "(phpunit:|Generating|Creating|File created)" "$temp_output" | tail -3 | while IFS= read -r line; do
-                    echo -e "   ${GREEN}📝 ${line}${NC}"
-                done
-            fi
-        fi
-        
-        echo -e "\n${CYAN}╚═══════════════════════════════════════════════════════════════════════════════╝${NC}"
-    fi
+    # Le mode debug est maintenant géré directement dans test_session_sync
+    # Pas besoin d'affichage supplémentaire ici
     
     if [[ $exit_code -eq 0 ]]; then
         echo -e "${GREEN}✓ SUCCESS${NC}${step_stats}"
@@ -485,26 +324,42 @@ run_test_simple() {
                 
                 # Afficher les informations d'échec
                 if [[ $DEBUG_MODE == "1" ]]; then
-                    # Mode debug: affichage structuré et détaillé
+                    # Mode debug: afficher directement les logs debug du test
                     echo -e "${CYAN}🔍 ANALYSE DÉTAILLÉE DE L'ÉCHEC:${NC}"
                     echo ""
                     
-                    # 1. Étapes en échec avec contexte complet
+                    # Afficher les boîtes debug si elles existent
+                    local debug_boxes=$(grep -A 20 "╭─ DEBUG INFO" "$temp_output")
+                    if [[ -n "$debug_boxes" ]]; then
+                        echo -e "${YELLOW}📋 INFORMATIONS DEBUG:${NC}"
+                        echo "$debug_boxes" | while IFS= read -r line; do
+                            if [[ "$line" =~ ^╭─ ]]; then
+                                echo -e "   ${BLUE}$line${NC}"
+                            elif [[ "$line" =~ ^│ ]]; then
+                                echo -e "   ${CYAN}$line${NC}"
+                            elif [[ "$line" =~ ^╰─ ]]; then
+                                echo -e "   ${BLUE}$line${NC}"
+                            else
+                                echo -e "   $line"
+                            fi
+                        done
+                        echo ""
+                    fi
+                    
+                    # Afficher les étapes qui ont échoué
                     echo -e "${YELLOW}📋 ÉTAPES QUI ONT ÉCHOUÉ:${NC}"
-                    grep -B3 -A8 "❌ FAIL:" "$temp_output" | head -30 | while IFS= read -r line; do
+                    grep -B2 -A5 "❌ FAIL:" "$temp_output" | head -30 | while IFS= read -r line; do
                         if [[ "$line" =~ ^❌\ FAIL: ]]; then
                             echo -e "   ${RED}🚫 ${line#❌ FAIL: }${NC}"
-                        elif [[ "$line" =~ ^\>\>\>\ (Test|Étape) ]]; then
+                        elif [[ "$line" =~ ^\>\>\>\ Étape ]]; then
                             echo -e "   ${BLUE}📍 ${line}${NC}"
-                        elif [[ "$line" =~ ^Code\ monitor: ]]; then
-                            echo -e "   ${CYAN}📥 INPUT: ${line#Code monitor: }${NC}"
-                        elif [[ "$line" =~ ^Sortie\ du\ test: ]]; then
-                            echo -e "   ${GREEN}📤 OUTPUT: ${line#Sortie du test: }${NC}"
-                        elif [[ "$line" =~ ^Résultat\ attendu: ]]; then
-                            echo -e "   ${YELLOW}🎯 EXPECTED: ${line#Résultat attendu: }${NC}"
-                        elif [[ "$line" =~ ^Résultat\ obtenu: ]]; then
-                            echo -e "   ${RED}❌ ACTUAL: ${line#Résultat obtenu: }${NC}"
-                        elif [[ "$line" =~ ^Pattern ]]; then
+                        elif [[ "$line" =~ ^Expected: ]]; then
+                            echo -e "   ${YELLOW}🎯 ATTENDU: ${line#Expected: }${NC}"
+                        elif [[ "$line" =~ ^Got: ]]; then
+                            echo -e "   ${RED}❌ OBTENU: ${line#Got: }${NC}"
+                        elif [[ "$line" =~ ^Étapes\ échouées ]]; then
+                            echo -e "   ${RED}💥 ${line}${NC}"
+                        elif [[ "$line" =~ ^Étape\ [0-9] ]]; then
                             echo -e "   ${PURPLE}🔍 ${line}${NC}"
                         elif [[ "$line" =~ ^-- ]]; then
                             echo "   ────────────────────────────────────────"
@@ -514,36 +369,16 @@ run_test_simple() {
                     echo ""
                     echo -e "${BLUE}⚡ DERNIÈRES COMMANDES:${NC}"
                     
-                    # Capturer les commandes avec leurs outputs et étapes
-                    local cmd_output_temp=$(mktemp)
-                    grep -E "(\[DEBUG\] Etape|\[DEBUG\] Command:|\[DEBUG\] Output:|>>> Étape)" "$temp_output" | tail -15 > "$cmd_output_temp"
-                    
-                    # Afficher les commandes avec leurs outputs de façon structurée
-                    local current_step=""
-                    while IFS= read -r line; do
-                        if echo "$line" | grep -q "\[DEBUG\] Etape [0-9]"; then
-                            current_step=$(echo "$line" | sed -E 's/.*\[DEBUG\] Etape ([0-9]+).*/\1/')
-                            echo -e "   ${PURPLE}📋 Etape $current_step: ${line##*\ -\ }${NC}"
-                        elif echo "$line" | grep -q "\[DEBUG\] Command:"; then
-                            command_text=$(echo "$line" | sed 's/.*\[DEBUG\] Command: //')
-                            echo -e "   ${CYAN}   ⚡ Commande: ${command_text}${NC}"
-                        elif echo "$line" | grep -q "\[DEBUG\] Output:"; then
-                            output_text=$(echo "$line" | sed 's/.*\[DEBUG\] Output: //')
-                            echo -e "   ${GREEN}   📤 Sortie: ${output_text}${NC}"
-                        elif [[ "$line" =~ ^\>\>\>\ Étape\ ([0-9]+): ]]; then
-                            echo -e "   ${BLUE}📍 ${line}${NC}"
+                    # Extraire les commandes debug
+                    grep -E "(\[DEBUG\] Étape [0-9]|\[DEBUG\] Commande:|\[DEBUG\] Result:)" "$temp_output" | tail -10 | while IFS= read -r line; do
+                        if [[ "$line" =~ ^\[DEBUG\]\ Étape ]]; then
+                            echo -e "   ${PURPLE}📋 ${line}${NC}"
+                        elif [[ "$line" =~ ^\[DEBUG\]\ Commande: ]]; then
+                            echo -e "   ${CYAN}⚡ ${line}${NC}"
+                        elif [[ "$line" =~ ^\[DEBUG\]\ Result: ]]; then
+                            echo -e "   ${GREEN}📤 ${line}${NC}"
                         fi
-                    done < "$cmd_output_temp"
-                    
-                    # Fallback si pas de lignes DEBUG trouvées
-                    if [[ ! -s "$cmd_output_temp" ]]; then
-                        echo -e "   ${YELLOW}⚠️  Pas de logs DEBUG disponibles${NC}"
-                        grep -E "(\$PSYSH_CMD|echo \"Étape|phpunit:|monitor)" "$temp_output" | tail -4 | while IFS= read -r line; do
-                            echo -e "   ${CYAN}🔧 ${line}${NC}"
-                        done
-                    fi
-                    
-                    rm -f "$cmd_output_temp"
+                    done
                     
                     echo ""
                     echo -e "${RED}🚨 ERREURS SYSTÈME dans ${YELLOW}$(basename "$test_file")${RED}:${NC}"
@@ -553,36 +388,8 @@ run_test_simple() {
                             if echo "$line" | grep -q "^[[:space:]]*[0-9]"; then
                                 local line_num=$(echo "$line" | cut -d: -f1)
                                 local error_content=$(echo "$line" | cut -d: -f2-)
-                                
                                 echo -e "   ${RED}💥 [Ligne $line_num] ${error_content}${NC}"
-                                
-                                # Chercher la commande qui a causé cette erreur (safer approach)
-                                local safe_error_content=$(echo "$error_content" | sed 's/\[/\\[/g' | sed 's/\]/\\]/g' | sed 's/"/\\"/g')
-                                
-                                # Afficher les lignes avant et après pour plus de contexte
-                                local start_line=$((line_num - 2))
-                                local end_line=$((line_num + 2))
-                                if [[ $start_line -lt 1 ]]; then start_line=1; fi
-                                
-                                local context=$(sed -n "${start_line},${end_line}p" "$temp_output" 2>/dev/null | nl -v$start_line -w3 -s': ')
-                                if [[ -n "$context" ]]; then
-                                    echo -e "   ${CYAN}🔍 Contexte (lignes $start_line-$end_line):${NC}"
-                                    echo "$context" | while IFS= read -r context_line; do
-                                        if echo "$context_line" | grep -q "$line_num:"; then
-                                            echo -e "      ${RED}→ $context_line${NC}"  # Ligne d'erreur en rouge
-                                        else
-                                            echo -e "      $context_line"
-                                        fi
-                                    done
-                                fi
-                                
-                                local associated_command=$(grep -B 2 -A 2 -F "$safe_error_content" "$temp_output" 2>/dev/null | grep -E "(\\[DEBUG\\] Command:|Command:|monitor|phpunit:)" | head -1 | sed 's/.*Command: //' | sed 's/\\[DEBUG\\] Etape [0-9]\\* - //' || echo "")
-                                
-                                if [[ -n "$associated_command" ]]; then
-                                    echo -e "   ${YELLOW}   📝 Input: ${associated_command}${NC}"
-                                fi
-                                
-                                echo ""  # Ligne vide entre les erreurs
+                                echo ""
                             fi
                         done
                     else
@@ -757,7 +564,7 @@ run_test() {
     echo ""
     
     # Exécuter le test avec les variables d'environnement
-    env AUTO_MODE="$AUTO_MODE" SIMPLE_MODE="$SIMPLE_MODE" ./$test_file
+    env AUTO_MODE="$AUTO_MODE" SIMPLE_MODE="$SIMPLE_MODE" DEBUG_MODE="$DEBUG_MODE" ./$test_file
     
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
