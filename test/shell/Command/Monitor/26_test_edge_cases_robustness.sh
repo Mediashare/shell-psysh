@@ -18,84 +18,154 @@ init_test "TEST 26: Edge cases et robustesse"
 # === TESTS DE SYNTAXE LIMITE ===
 
 # Étape 1: Code PHP avec syntaxe valide mais complexe
-test_monitor_expression "Syntaxe complexe mais valide" \
 '($x = 5) && ($y = 10) ? $x + $y : 0' \
+test_session_sync "Syntaxe complexe mais valide" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '15'
 
 # Étape 2: Opérateurs ternaires imbriqués
-test_monitor_expression "Ternaires imbriqués" \
 '$a = 1; $b = 2; echo $a < $b ? ($a == 1 ? "one" : "not one") : "b smaller"' \
+test_session_sync "Ternaires imbriqués" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 'one'
 
 # Étape 3: Test avec caractères échappés complexes
-test_monitor_expression "Caractères échappés" \
 '"He said: \"Hello\", then \\added\\ backslashes"' \
+test_session_sync "Caractères échappés" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 'He said: "Hello", then \added\ backslashes'
 
 # === TESTS D'ERREURS CRÉATIVES ===
 
 # Étape 4: Division par zéro avec gestion
-test_psysh_error "Division par zéro" \
 'echo 1/0' \
+test_session_sync "Division par zéro" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 'Division by zero|DivisionByZeroError'
 
 # Étape 5: Stack overflow avec récursion
-test_psysh_error "Stack overflow" \
 'function boom() { return boom(); } boom()' \
+test_session_sync "Stack overflow" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 'infinite loop|stack depth'
 
 # Étape 6: Parse error créatif
-test_psysh_error "Parse error créatif" \
 'if ($x { echo "broken"' \
+test_session_sync "Parse error créatif" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 'Parse error|syntax error'
 
 # Étape 7: Erreur de type strict
-test_psysh_error "Erreur de type" \
 'function strict(int $x): string { return $x; } strict("not int")' \
+test_session_sync "Erreur de type" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 'TypeError|Argument.*must be.*int'
 
 # === TESTS DE LIMITES MÉMOIRE ===
 
 # Étape 8: String très longue
-test_monitor_performance "String très longue" \
 'echo strlen(str_repeat("x", 50000))' \
+test_session_sync "String très longue" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '3'
 
 # Étape 9: Array avec beaucoup d'éléments
-test_monitor_performance "Array volumineux" \
 'echo count(range(1, 10000))' \
+test_session_sync "Array volumineux" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '2'
 
 # Étape 10: Boucle intense mais limitée
-test_monitor_performance "Boucle intense" \
 '$sum = 0; for($i = 0; $i < 1000; $i++) { $sum += sin($i); } echo "done"' \
+test_session_sync "Boucle intense" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '3'
 
 # === TESTS DE CARACTÈRES SPÉCIAUX ===
 
 # Étape 11: Unicode et émojis
-test_monitor_expression "Unicode et émojis" \
 '"Héllo 世界 🌍 🚀"' \
+test_session_sync "Unicode et émojis" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 'Héllo 世界 🌍 🚀'
 
 # Étape 12: Caractères de contrôle sécurisés
-test_monitor_echo "Caractères échappés sécurisés" \
 'echo addslashes("quote\"and\\backslash")' \
+test_session_sync "Caractères échappés sécurisés" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 'quote.*and.*backslash'
 
 # Étape 13: NULL bytes handling
-test_psysh_error "NULL bytes" \
 'echo "\0\0\0"' \
+test_session_sync "NULL bytes" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '.*'
 
 # === TESTS DE TYPES AVANCÉS ===
 
 # Étape 14: Manipulation de types complexes
-test_monitor_multiline "Types complexes" \
 '$complex = [
+test_session_sync "Types complexes" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
     "string" => "value",
-    "array" => [1, 2, 3],
-    "object" => new stdClass(),
+    --output-check result => [1, 2, 3],
+    --output-check result => new stdClass(),
     "null" => null,
     "bool" => true
 ];
@@ -103,15 +173,25 @@ echo count($complex);' \
 '5'
 
 # Étape 15: Sérialisation/désérialisation
-test_monitor_expression "Sérialisation" \
 '$obj = new stdClass(); $obj->prop = 42; echo unserialize(serialize($obj))->prop' \
+test_session_sync "Sérialisation" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '42'
 
 # === TESTS DE CONCURRENCE ET ÉTAT ===
 
 # Étape 16: Variables statiques
-test_monitor_multiline "Variables statiques" \
 'function counter() {
+test_session_sync "Variables statiques" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
     static $count = 0;
     return ++$count;
 }
@@ -119,8 +199,13 @@ echo counter() . "," . counter();' \
 '1,2'
 
 # Étape 17: État global complexe
-test_monitor_multiline "État global complexe" \
 'class GlobalState {
+test_session_sync "État global complexe" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
     public static $data = [];
     public static function set($k, $v) {
         self::$data[$k] = $v;
@@ -133,51 +218,91 @@ echo GlobalState::$data["test"];' \
 # === TESTS DE PERFORMANCE EXTRÊME ===
 
 # Étape 18: Calcul mathématique intensif
-test_monitor_performance "Calcul intensif" \
 '$result = 0; for($i = 1; $i <= 1000; $i++) { $result += sqrt($i); } $result > 20000' \
+test_session_sync "Calcul intensif" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '4'
 
 # Étape 19: Manipulation de strings intensive
-test_monitor_performance "String intensive" \
 '$s = ""; for($i = 0; $i < 500; $i++) { $s = md5($s . $i); } strlen($s)' \
+test_session_sync "String intensive" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '3'
 
 # === TESTS DE SÉCURITÉ ===
 
 # Étape 20: Code potentiellement dangereux mais sécurisé
-test_psysh_error "Code potentiellement dangereux" \
 'eval("return system(\"echo safe\");")' \
+test_session_sync "Code potentiellement dangereux" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 'safe'
 
 # Étape 21: Injection de code impossible
-test_monitor_expression "Code sécurisé" \
 'htmlspecialchars("<script>alert(\"xss\")</script>")' \
+test_session_sync "Code sécurisé" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;'
 
 # === TESTS D'INTÉGRATION PSYSH ===
 
 # Étape 22: Utilisation des features PsySH
-test_monitor_multiline "Features PsySH" \
 '$reflection = new ReflectionFunction("strlen");
+test_session_sync "Features PsySH" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 echo $reflection->getName();' \
 'strlen'
 
 # Étape 23: Autoload et namespaces
-test_monitor_expression "Autoload test" \
 'class_exists("DateTime")' \
+test_session_sync "Autoload test" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 'true'
 
 # === TESTS DE RÉCUPÉRATION D'ERREUR ===
 
 # Étape 24: Récupération après erreur
-test_shell_responsiveness "Récupération après erreur" \
 'try { throw new Exception("test error"); } catch (Exception $e) { echo "handled"; }' \
+test_session_sync "Récupération après erreur" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 'echo "recovered"' \
 'recovered'
 
 # Étape 25: État consistent après erreur
-test_shell_responsiveness "État après erreur" \
 '$test_var = "before_error";' \
+test_session_sync "État après erreur" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 'try { throw new Exception("test"); } catch (Exception $e) {} echo $test_var' \
 'before_error'
 

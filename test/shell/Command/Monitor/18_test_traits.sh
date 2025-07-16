@@ -16,8 +16,13 @@ source "$(dirname "$0")/../../lib/func/test_session_sync_enhanced.sh"
 init_test "TEST 18: Traits"
 
 # Étape 1: Trait basique
-test_monitor_multiline "Trait Logger" \
 'trait Logger {
+test_session_sync "Trait Logger" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
     public function log($message) {
         return "[LOG] $message";
     }
@@ -30,8 +35,13 @@ echo $obj->log("Test message");' \
 '[LOG] Test message'
 
 # Étape 2: Trait avec conflit de méthodes
-test_monitor_multiline "Résolution de conflit" \
 'trait A {
+test_session_sync "Résolution de conflit" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
     public function hello() { return "Hello from A"; }
 }
 trait B {
@@ -47,8 +57,13 @@ echo $c->hello();' \
 'Hello from A'
 
 # Étape 3: Trait avec propriétés
-test_monitor_multiline "Trait avec propriétés" \
 'trait Counter {
+test_session_sync "Trait avec propriétés" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
     protected $count = 0;
     public function increment() {
         $this->count++;

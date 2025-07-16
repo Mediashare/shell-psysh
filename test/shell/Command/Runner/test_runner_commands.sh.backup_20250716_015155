@@ -1,0 +1,98 @@
+#!/bin/bash
+
+# Test script for Runner commands
+# Tests PHPUnitRunCommand, PHPUnitDebugCommand, PHPUnitMonitorCommand, etc.
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/../../lib/func/loader.sh"
+# Charger test_session_sync
+source "$(dirname "$0")/../../lib/func/test_session_sync_enhanced.sh"
+
+# Vérifier que PROJECT_ROOT est défini
+if [[ -z "$PROJECT_ROOT" ]]; then
+    PROJECT_ROOT="$(cd "$(dirname "$0")" && cd ../.. && pwd)"
+    export PROJECT_ROOT
+fi
+
+init_test "Runner Commands"
+echo ""
+
+# Test PHPUnitRunCommand (phpunit:run)
+test_session_sync "phpunit:run basic execution" \
+    "test_session_sync "Test command" --step \"phpunit:run --help\"" \
+    "Usage:" \
+    "check_contains"
+
+# Test PHPUnitRunAllCommand (phpunit:run-all)
+test_session_sync "phpunit:run-all help" \
+    "test_session_sync "Test command" --step \"phpunit:run-all --help\"" \
+    "Usage:" \
+    "check_contains"
+
+# Test PHPUnitRunProjectCommand (phpunit:run-project)
+test_session_sync "phpunit:run-project help" \
+    "test_session_sync "Test command" --step \"phpunit:run-project --help\"" \
+    "Usage:" \
+    "check_contains"
+
+# Test PHPUnitDebugCommand (phpunit:debug)
+test_session_sync "phpunit:debug help" \
+    "test_session_sync "Test command" --step \"phpunit:debug --help\"" \
+    "Usage:" \
+    "check_contains"
+
+# Test PHPUnitMonitorCommand (phpunit:monitor)
+test_session_sync "phpunit:monitor help" \
+    "test_session_sync "Test command" --step \"phpunit:monitor --help\"" \
+    "Usage:" \
+    "check_contains"
+
+# Test PHPUnitProfileCommand (phpunit:profile)
+test_session_sync "phpunit:profile help" \
+    "test_session_sync "Test command" --step \"phpunit:profile --help\"" \
+    "Usage:" \
+    "check_contains"
+
+# Test PHPUnitTraceCommand (phpunit:trace)
+test_session_sync "phpunit:trace help" \
+    "test_session_sync "Test command" --step \"phpunit:trace --help\"" \
+    "Usage:" \
+    "check_contains"
+
+# Test PHPUnitWatchCommand (phpunit:watch)
+test_session_sync "phpunit:watch help" \
+    "test_session_sync "Test command" --step \"phpunit:watch --help\"" \
+    "Usage:" \
+    "check_contains"
+
+# Test PHPUnitExplainCommand (phpunit:explain)
+test_session_sync "phpunit:explain help" \
+    "test_session_sync "Test command" --step \"phpunit:explain --help\"" \
+    "Usage:" \
+    "check_contains"
+
+# Test PsyshMonitorCommand (psysh:monitor)
+test_session_sync "psysh:monitor help" \
+    "test_session_sync "Test command" --step \"psysh:monitor --help\"" \
+    "Usage:" \
+    "check_contains"
+
+# Test TabCommand (tab)
+test_session_sync "tab command help" \
+    "test_session_sync "Test command" --step \"tab --help\"" \
+    "Usage:" \
+    "check_contains"
+
+# Test TestParamsCommand (test:params)
+test_session_sync "test:params help" \
+    "test_session_sync "Test command" --step \"test:params --help\"" \
+    "Usage:" \
+    "check_contains"
+
+# Test combined runner operations
+test_session_sync "Combined runner operations" \
+    "test_session_sync "Test command" --step \"phpunit:run --dry-run; phpunit:debug --list-tests\"" \
+    "dry-run" \
+    "check_contains"
+
+test_summary

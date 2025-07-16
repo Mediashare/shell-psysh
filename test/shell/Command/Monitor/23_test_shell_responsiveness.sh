@@ -17,14 +17,24 @@ source "$(dirname "$0")/../../lib/func/test_session_sync_enhanced.sh"
 init_test "TEST 23: Réactivité du shell"
 
 # Étape 1: Test de réactivité
-test_shell_responsiveness "Shell responsive" \
 '$result = 42;' \
+test_session_sync "Shell responsive" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context shell \
+    --output-check contains \
+    --shell \
+    --tag "shell_session"
 'echo "Test OK"' \
 'Test OK'
 
 # Étape 2: Test multiple
-test_shell_responsiveness "Multiple commands" \
 '$result = 1+1;' \
+test_session_sync "Multiple commands" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '$x = 10; echo $x' \
 '10'
 

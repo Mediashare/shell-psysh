@@ -15,22 +15,28 @@ source "$(dirname "$0")/../../lib/func/test_session_sync_enhanced.sh"
 init_test "PHPUnit: Command Create"
 
 # Test création basique
-run_test_step "Créer un test simple" \
-    "$PROJECT_ROtest_session_sync "Test command" --step \"phpunit:create 'App\Service\TestService'\"" \
-    "✅" \
-    check_contains
+test_session_sync "Créer un test simple" \
+    --step "phpunit:create 'App\\Service\\TestService'" \
+    --expect "✅" \
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
 
 # Test création avec une classe simple
-run_test_step "Créer un test pour une classe utilitaire" \
-    "$PROJECT_ROtest_session_sync "Test command" --step \"phpunit:create 'App\Util\Calculator'\"" \
-    "✅" \
-    check_contains
+test_session_sync "Créer un test pour une classe utilitaire" \
+    --step "phpunit:create 'App\\Util\\Calculator'" \
+    --expect "✅" \
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
 
 # Test avec namespace simple
-run_test_step "Créer un test avec namespace simple" \
-    "$PROJECT_ROtest_session_sync "Test command" --step \"phpunit:create 'MyClass'\"" \
-    "✅" \
-    check_contains
+test_session_sync "Créer un test avec namespace simple" \
+    --step "phpunit:create 'MyClass'" \
+    --expect "✅" \
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
 
 # Afficher le résumé des tests
 test_summary

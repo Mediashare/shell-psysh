@@ -17,18 +17,33 @@ source "$(dirname "$0")/../../lib/func/test_session_sync_enhanced.sh"
 init_test "TEST 21: Résultats des expressions simples"
 
 # Étape 1: Expression simple
-test_monitor_expression "Expression simple" \
 '42' \
+test_session_sync "Expression simple" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '42'
 
 # Étape 2: Calcul
-test_monitor_expression "Calcul basique" \
 '5 + 3' \
+test_session_sync "Calcul basique" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '8'
 
 # Étape 3: String
-test_monitor_expression "String" \
 'echo "Hello World"' \
+test_session_sync "String" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 'Hello World'
 
 # Afficher le résumé

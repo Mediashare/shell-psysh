@@ -13,96 +13,94 @@ echo "🧪 Testing phpunit:add command..."
 
 # Test 1: Add basic test method
 echo "📝 Test 1: Add basic test method"
-{
-    echo 'phpunit:create TestService'
-    echo 'phpunit:add testBasicMethod'
-} | $PSYSH_CMD --no-interactive > /tmp/psysh_add_1.out 2>&1 || true
-if grep -q "Méthode.*ajoutée" /tmp/psysh_add_1.out; then
-    echo "✅ Basic method addition works"
-else
-    echo "❌ Basic method addition failed"
-    cat /tmp/psysh_add_1.out
-fi
+
+    --step "phpunit:create TestService; phpunit:add testBasicMethod" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "Add basic test method" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
+    --expect "✅" \
+    --context phpunit
+
 
 # Test 2: Add multiple test methods
 echo "📝 Test 2: Add multiple test methods"
-{
-    echo 'phpunit:create UserService'
-    echo 'phpunit:add testCreateUser'
-    echo 'phpunit:add testUpdateUser'
-    echo 'phpunit:add testDeleteUser'
-} | $PSYSH_CMD --no-interactive > /tmp/psysh_add_2.out 2>&1 || true
-if grep -q "Méthode.*ajoutée" /tmp/psysh_add_2.out; then
-    echo "✅ Multiple methods addition works"
-else
-    echo "❌ Multiple methods addition failed"
-    cat /tmp/psysh_add_2.out
-fi
+
+    --step "phpunit:create UserService; phpunit:add testCreateUser; phpunit:add testUpdateUser; phpunit:add testDeleteUser" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "Add multiple test methods" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
+    --expect "✅" \
+    --context phpunit
+
 
 # Test 3: Add method with descriptive name
 echo "📝 Test 3: Add method with descriptive name"
-{
-    echo 'phpunit:create EmailService'
-    echo 'phpunit:add testValidateEmailFormat'
-    echo 'phpunit:add testSendEmailWithAttachment'
-} | $PSYSH_CMD --no-interactive > /tmp/psysh_add_3.out 2>&1 || true
-if grep -q "Méthode.*ajoutée" /tmp/psysh_add_3.out; then
-    echo "✅ Descriptive method names work"
-else
-    echo "❌ Descriptive method names failed"
-    cat /tmp/psysh_add_3.out
-fi
+
+    --step "phpunit:create EmailService; phpunit:add testValidateEmailFormat; phpunit:add testSendEmailWithAttachment" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "Add method with descriptive name" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
+    --expect "✅" \
+    --context phpunit
+
 
 # Test 4: Error handling - no test created first
 echo "📝 Test 4: Error handling - no test created first"
 echo 'phpunit:add testWithoutTest' | $PSYSH_CMD --no-interactive > /tmp/psysh_add_4.out 2>&1 || true
 if grep -q -E "(Aucun test|test actuel|error)" /tmp/psysh_add_4.out; then
-    echo "✅ Error handling works"
 else
-    echo "❌ Error handling failed"
     cat /tmp/psysh_add_4.out
 fi
 
 # Test 5: Error handling - no method name
-echo "📝 Test 5: Error handling - no method name"
-{
-    echo 'phpunit:create TestService'
-    echo 'phpunit:add'
-} | $PSYSH_CMD --no-interactive > /tmp/psysh_add_5.out 2>&1 || true
-if grep -q -E "(required|error|Aucun|missing)" /tmp/psysh_add_5.out; then
-    echo "✅ Missing method name handling works"
-else
-    echo "❌ Missing method name handling failed"
-    cat /tmp/psysh_add_5.out
-fi
+
+    --step "✅ Error handling works; ❌ Error handling failed; 📝 Test 5: Error handling - no method name; phpunit:create TestService; phpunit:add" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "Error handling - no test created first" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
+    --expect "✅" \
+    --context phpunit
+
 
 # Test 6: Add method with camelCase
 echo "📝 Test 6: Add method with camelCase"
-{
-    echo 'phpunit:create PaymentService'
-    echo 'phpunit:add testProcessPaymentWithCreditCard'
-    echo 'phpunit:add testCalculateDiscountForPremiumUser'
-} | $PSYSH_CMD --no-interactive > /tmp/psysh_add_6.out 2>&1 || true
-if grep -q "Méthode.*ajoutée" /tmp/psysh_add_6.out; then
-    echo "✅ CamelCase method names work"
-else
-    echo "❌ CamelCase method names failed"
-    cat /tmp/psysh_add_6.out
-fi
+
+    --step "phpunit:create PaymentService; phpunit:add testProcessPaymentWithCreditCard; phpunit:add testCalculateDiscountForPremiumUser" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "Add method with camelCase" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
+    --expect "✅" \
+    --context phpunit
+
 
 # Test 7: Add method with underscore
 echo "📝 Test 7: Add method with underscore"
-{
-    echo 'phpunit:create DatabaseService'
-    echo 'phpunit:add test_database_connection'
-    echo 'phpunit:add test_query_execution'
-} | $PSYSH_CMD --no-interactive > /tmp/psysh_add_7.out 2>&1 || true
-if grep -q "Méthode.*ajoutée" /tmp/psysh_add_7.out; then
-    echo "✅ Underscore method names work"
-else
-    echo "❌ Underscore method names failed"
-    cat /tmp/psysh_add_7.out
-fi
+
+    --step "phpunit:create DatabaseService; phpunit:add test_database_connection; phpunit:add test_query_execution" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "Add method with underscore" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
+    --expect "✅" \
+    --context phpunit
+
 
 # Clean up
 rm -f /tmp/psysh_add_*.out

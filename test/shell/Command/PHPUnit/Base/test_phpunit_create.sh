@@ -3,75 +3,90 @@
 # Test phpunit:create command
 # Tests all options and scenarios for creating PHPUnit tests
 
-set -e
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
+source "$SCRIPT_DIR/../../../lib/func/loader.sh"
+source "$SCRIPT_DIR/../../../lib/func/test_session_sync_enhanced.sh"
 
-
-echo "🧪 Testing phpunit:create command..."
+# Initialiser l'environnement de test
+init_test_environment
+init_test "PHPUnit Create Command Tests"
 
 # Test 1: Basic class creation
-echo "📝 Test 1: Basic class creation"
-echo 'phpunit:create TestService' | $PSYSH_CMD --no-interactive > /tmp/psysh_test_1.out 2>&1 || true
-if grep -q "Test créé" /tmp/psysh_test_1.out; then
-    echo "✅ Basic creation works"
-else
-    echo "❌ Basic creation failed"
-    cat /tmp/psysh_test_1.out
-fi
+    --step "phpunit:create TestService" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "Basic class creation" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
+    --expect "Test créé" \
+    --context phpunit
 
 # Test 2: Namespace class creation
-echo "📝 Test 2: Namespace class creation"
-echo 'phpunit:create App\\Service\\UserService' | $PSYSH_CMD --no-interactive > /tmp/psysh_test_2.out 2>&1 || true
-if grep -q "Test créé" /tmp/psysh_test_2.out; then
-    echo "✅ Namespace creation works"
-else
-    echo "❌ Namespace creation failed"
-    cat /tmp/psysh_test_2.out
-fi
+    --step "phpunit:create App\\Service\\UserService" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "Namespace class creation" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
+    --expect "Test créé" \
+    --context phpunit
 
 # Test 3: Controller class creation
-echo "📝 Test 3: Controller class creation"
-echo 'phpunit:create App\\Controller\\ApiController' | $PSYSH_CMD --no-interactive > /tmp/psysh_test_3.out 2>&1 || true
-if grep -q "Test créé" /tmp/psysh_test_3.out; then
-    echo "✅ Controller creation works"
-else
-    echo "❌ Controller creation failed"
-    cat /tmp/psysh_test_3.out
-fi
+    --step "phpunit:create App\\Controller\\ApiController" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "Controller class creation" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
+    --expect "Test créé" \
+    --context phpunit
 
 # Test 4: Repository class creation
-echo "📝 Test 4: Repository class creation"
-echo 'phpunit:create App\\Repository\\UserRepository' | $PSYSH_CMD --no-interactive > /tmp/psysh_test_4.out 2>&1 || true
-if grep -q "Test créé" /tmp/psysh_test_4.out; then
-    echo "✅ Repository creation works"
-else
-    echo "❌ Repository creation failed"
-    cat /tmp/psysh_test_4.out
-fi
+    --step "phpunit:create App\\Repository\\UserRepository" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "Repository class creation" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
+    --expect "Test créé" \
+    --context phpunit
 
 # Test 5: Error handling - no class name
-echo "📝 Test 5: Error handling - no class name"
-echo 'phpunit:create' | $PSYSH_CMD --no-interactive > /tmp/psysh_test_5.out 2>&1 || true
-if grep -q -E "(required|error|Aucun|missing)" /tmp/psysh_test_5.out; then
-    echo "✅ Error handling works"
-else
-    echo "❌ Error handling failed"
-    cat /tmp/psysh_test_5.out
-fi
+    --step "phpunit:create" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "Error handling - no class name" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
+    --expect "required" \
+    --context phpunit --output-check error
 
 # Test 6: Complex namespace
-echo "📝 Test 6: Complex namespace"
-echo 'phpunit:create My\\Domain\\User\\Service\\EmailService' | $PSYSH_CMD --no-interactive > /tmp/psysh_test_6.out 2>&1 || true
-if grep -q "Test créé" /tmp/psysh_test_6.out; then
-    echo "✅ Complex namespace works"
+    --step "phpunit:create My\\Domain\\User\\Service\\EmailService" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "Complex namespace" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
+    --expect "Test créé" \
+    --context phpunit
+
+# Afficher le résumé
+test_summary
+
+# Nettoyer l'environnement de test
+cleanup_test_environment
+
+# Sortir avec le code approprié
+if [[ $FAIL_COUNT -gt 0 ]]; then
+    exit 1
 else
-    echo "❌ Complex namespace failed"
-    cat /tmp/psysh_test_6.out
+    exit 0
 fi
 
-# Clean up
-rm -f /tmp/psysh_test_*.out
-
-echo "✨ phpunit:create tests completed"

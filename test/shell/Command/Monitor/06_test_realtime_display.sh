@@ -23,13 +23,23 @@ else
 fi
 
 # Étape 1: Test de progression en temps réel
-test_monitor_echo "Boucle avec affichage progressif" \
 "for(\$i = 1; \$i <= 5; \$i++) { echo \"Etape \$i/5\\n\"; if($DELAY > 0) usleep($DELAY); } echo \"Termine!\";" \
+test_session_sync "Boucle avec affichage progressif" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 'Termine!'
 
 # Étape 2: Test performance avec pause  
-test_monitor_echo "Boucle avec usleep" \
 "for(\$i = 1; \$i <= 3; \$i++) { if($DELAY > 0) usleep(100000); } echo \"Done\";" \
+test_session_sync "Boucle avec usleep" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 'Done'
 
 # Afficher le résumé

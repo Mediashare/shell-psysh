@@ -16,8 +16,13 @@ source "$(dirname "$0")/../../lib/func/test_session_sync_enhanced.sh"
 init_test "TEST 17: Générateurs"
 
 # Étape 1: Générateur simple
-test_monitor_multiline "Générateur nombres" \
 'function numbers($max) {
+test_session_sync "Générateur nombres" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
     for ($i = 1; $i <= $max; $i++) {
         yield $i;
     }
@@ -31,13 +36,23 @@ echo implode(", ", $result);' \
 '1, 2, 3'
 
 # Étape 2: Générateur Fibonacci
-test_monitor_expression "Générateur Fibonacci" \
 'function fibonacci($max) { $a = 0; $b = 1; while ($a < $max) { yield $a; $temp = $a + $b; $a = $b; $b = $temp; } } $fib = fibonacci(10); echo iterator_to_array($fib)[2]' \
+test_session_sync "Générateur Fibonacci" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '1'
 
 # Étape 3: Générateur avec clés
-test_monitor_multiline "Générateur avec clés" \
 'function keyValue() {
+test_session_sync "Générateur avec clés" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
     yield "first" => 1;
     yield "second" => 2;
     yield "third" => 3;

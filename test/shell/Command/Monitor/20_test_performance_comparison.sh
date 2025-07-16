@@ -16,18 +16,33 @@ source "$(dirname "$0")/../../lib/func/test_session_sync_enhanced.sh"
 init_test "TEST 20: Comparaison de performance"
 
 # Étape 1: Array vs ArrayObject
-test_monitor_performance "Array standard" \
 '$arr = []; for($i = 0; $i < 1000; $i++) { $arr[] = $i; } count($arr)' \
+test_session_sync "Array standard" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '3'
 
 # Étape 2: Différentes méthodes de boucle
-test_monitor_performance "Boucle for vs foreach" \
 '$data = range(1, 1000); $sum = 0; foreach($data as $val) { $sum += $val; } $sum' \
+test_session_sync "Boucle for vs foreach" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '3'
 
 # Étape 3: String concatenation vs array join
-test_monitor_performance "String concat vs implode" \
 '$parts = []; for($i = 0; $i < 100; $i++) { $parts[] = "item$i"; } strlen(implode(",", $parts))' \
+test_session_sync "String concat vs implode" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '2'
 
 # Afficher le résumé

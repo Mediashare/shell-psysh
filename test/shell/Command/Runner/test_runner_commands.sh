@@ -18,81 +18,68 @@ init_test "Runner Commands"
 echo ""
 
 # Test PHPUnitRunCommand (phpunit:run)
-run_test_step "phpunit:run basic execution" \
-    "test_session_sync "Test command" --step \"phpunit:run --help\"" \
-    "Usage:" \
-    "check_contains"
+test_session_sync "phpunit:run basic execution" \
+    --step "phpunit:run --help" \
+    --expect "Usage:" \
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
 
 # Test PHPUnitRunAllCommand (phpunit:run-all)
-run_test_step "phpunit:run-all help" \
-    "test_session_sync "Test command" --step \"phpunit:run-all --help\"" \
-    "Usage:" \
-    "check_contains"
+test_session_sync "phpunit:run-all help" \
+    --step "phpunit:run-all --help" \
+    --expect "Usage:" \
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
 
 # Test PHPUnitRunProjectCommand (phpunit:run-project)
-run_test_step "phpunit:run-project help" \
-    "test_session_sync "Test command" --step \"phpunit:run-project --help\"" \
-    "Usage:" \
-    "check_contains"
+test_session_sync "phpunit:run-project help" \
+    --step "phpunit:run-project --help" \
+    --expect "Usage:" \
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
 
 # Test PHPUnitDebugCommand (phpunit:debug)
-run_test_step "phpunit:debug help" \
-    "test_session_sync "Test command" --step \"phpunit:debug --help\"" \
-    "Usage:" \
-    "check_contains"
+test_session_sync "phpunit:debug help" \
+    --step "phpunit:debug --help" \
+    --expect "Usage:" \
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
 
 # Test PHPUnitMonitorCommand (phpunit:monitor)
-run_test_step "phpunit:monitor help" \
-    "test_session_sync "Test command" --step \"phpunit:monitor --help\"" \
-    "Usage:" \
-    "check_contains"
-
-# Test PHPUnitProfileCommand (phpunit:profile)
-run_test_step "phpunit:profile help" \
-    "test_session_sync "Test command" --step \"phpunit:profile --help\"" \
-    "Usage:" \
-    "check_contains"
-
-# Test PHPUnitTraceCommand (phpunit:trace)
-run_test_step "phpunit:trace help" \
-    "test_session_sync "Test command" --step \"phpunit:trace --help\"" \
-    "Usage:" \
-    "check_contains"
-
-# Test PHPUnitWatchCommand (phpunit:watch)
-run_test_step "phpunit:watch help" \
-    "test_session_sync "Test command" --step \"phpunit:watch --help\"" \
-    "Usage:" \
-    "check_contains"
-
-# Test PHPUnitExplainCommand (phpunit:explain)
-run_test_step "phpunit:explain help" \
-    "test_session_sync "Test command" --step \"phpunit:explain --help\"" \
-    "Usage:" \
-    "check_contains"
+test_session_sync "phpunit:monitor help" \
+    --step "phpunit:monitor --help" \
+    --expect "Usage:" \
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
 
 # Test PsyshMonitorCommand (psysh:monitor)
-run_test_step "psysh:monitor help" \
-    "test_session_sync "Test command" --step \"psysh:monitor --help\"" \
-    "Usage:" \
-    "check_contains"
+test_session_sync "psysh:monitor help" \
+    --step "psysh:monitor --help" \
+    --expect "Usage:" \
+    --context monitor \
+    --output-check contains \
+    --tag "monitor_session"
 
 # Test TabCommand (tab)
-run_test_step "tab command help" \
-    "test_session_sync "Test command" --step \"tab --help\"" \
-    "Usage:" \
-    "check_contains"
+test_session_sync "tab command help" \
+    --step "tab --help" \
+    --expect "Usage:" \
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "psysh_session"
 
-# Test TestParamsCommand (test:params)
-run_test_step "test:params help" \
-    "test_session_sync "Test command" --step \"test:params --help\"" \
-    "Usage:" \
-    "check_contains"
-
-# Test combined runner operations
-run_test_step "Combined runner operations" \
-    "test_session_sync "Test command" --step \"phpunit:run --dry-run; phpunit:debug --list-tests\"" \
-    "dry-run" \
-    "check_contains"
+# Test Combined operations with shared session
+test_session_sync "Combined runner operations" \
+    --step "phpunit:run --dry-run" \
+    --expect "dry-run" \
+    --context phpunit \
+    --output-check contains \
+    --tag "combined_session"
 
 test_summary

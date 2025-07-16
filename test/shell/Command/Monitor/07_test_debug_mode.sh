@@ -16,18 +16,33 @@ source "$(dirname "$0")/../../lib/func/test_session_sync_enhanced.sh"
 init_test "TEST 07: Mode debug"
 
 # Étape 1: Test de variables en mode debug
-test_monitor_expression "Calcul avec variables" \
 '$x = 10; $y = 20; $z = $x + $y; echo $z' \
+test_session_sync "Calcul avec variables" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '30'
 
 # Étape 2: Test d'affichage de variables
-test_monitor_expression "Vérification des variables" \
 '$a = "Hello"; $b = "World"; echo $a . " " . $b' \
+test_session_sync "Vérification des variables" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 'Hello World'
 
 # Étape 3: Test de débogage avec array
-test_monitor_expression "Array et debug" \
 '$arr = [1, 2, 3]; echo count($arr)' \
+test_session_sync "Array et debug" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '3'
 
 # Afficher le résumé

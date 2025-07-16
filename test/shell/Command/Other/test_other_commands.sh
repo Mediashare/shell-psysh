@@ -18,93 +18,163 @@ init_test "Other Commands"
 echo ""
 
 # Test PHPUnitAddCommand (phpunit:add)
-run_test_step "phpunit:add help" \
-    "test_session_sync "Test command" --step \"phpunit:add --help\"" \
-    "Usage:" \
-    "check_contains"
+    --step "phpunit:add --help" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:add help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
+    --expect "Usage:" \
+    --output-check contains
 
 # Test PHPUnitCallOriginalCommand (phpunit:call-original)
-run_test_step "phpunit:call-original help" \
-    "test_session_sync "Test command" --step \"phpunit:call-original --help\"" \
-    "Usage:" \
-    "check_contains"
+    --step "phpunit:call-original --help" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:call-original help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
+    --expect "Usage:" \
+    --output-check contains
 
 # Test PHPUnitEvalCommand (phpunit:eval)
-run_test_step "phpunit:eval help" \
-    "test_session_sync "Test command" --step \"phpunit:eval --help\"" \
-    "Usage:" \
-    "check_contains"
+    --step "phpunit:eval --help" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:eval help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
+    --expect "Usage:" \
+    --output-check contains
 
 # Test PHPUnitExpectCommand (phpunit:expect)
-run_test_step "phpunit:expect help" \
-    "test_session_sync "Test command" --step \"phpunit:expect --help\"" \
-    "Usage:" \
-    "check_contains"
+    --step "phpunit:expect --help" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:expect help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
+    --expect "Usage:" \
+    --output-check contains
 
 # Test PHPUnitVerifyCommand (phpunit:verify)
-run_test_step "phpunit:verify help" \
-    "test_session_sync "Test command" --step \"phpunit:verify --help\"" \
-    "Usage:" \
-    "check_contains"
+    --step "phpunit:verify --help" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:verify help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
+    --expect "Usage:" \
+    --output-check contains
 
 # Test phpunit:add with simple value
-run_test_step "Add simple value" \
-    "test_session_sync "Test command" --step \"phpunit:add --value='Hello World' --key='test_key'\"" \
+    --step "phpunit:add --value='Hello World' --key='test_key'" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "Add simple value" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
     "added" \
-    "check_contains"
+    --output-check contains
 
 # Test phpunit:eval with simple expression
-run_test_step "Eval simple expression" \
-    "test_session_sync "Test command" --step \"phpunit:eval --code='2 + 2'\"" \
+    --step "phpunit:eval --code='2 + 2'" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "Eval simple expression" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
     "4" \
-    "check_contains"
+    --output-check contains
 
 # Test phpunit:eval with variable assignment
-run_test_step "Eval variable assignment" \
     "test_session_sync "Test command" --step \"phpunit:eval --code='\$result = 5 * 10; return \$result;'\"" \
+test_session_sync "Eval variable assignment" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
     "50" \
-    "check_contains"
+    --output-check contains
 
 # Test phpunit:expect with simple expectation
-run_test_step "Expect simple value" \
-    "test_session_sync "Test command" --step \"phpunit:expect --value='test' --equals='test'\"" \
+    --step "phpunit:expect --value='test' --equals='test'" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "Expect simple value" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
     "✅" \
-    "check_contains"
+    --output-check contains
 
 # Test phpunit:expect with array expectation
-run_test_step "Expect array value" \
-    "test_session_sync "Test command" --step \"phpunit:expect --value='[1,2,3]' --contains='2'\"" \
+    --step "phpunit:expect --value='[1,2,3]' --contains='2'" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "Expect array value" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
     "✅" \
-    "check_contains"
+    --output-check contains
 
 # Test phpunit:verify with condition
-run_test_step "Verify condition" \
-    "test_session_sync "Test command" --step \"phpunit:verify --condition='true' --message='This should pass'\"" \
+    --step "phpunit:verify --condition='true' --message='This should pass'" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "Verify condition" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
     "✅" \
-    "check_contains"
+    --output-check contains
 
 # Test phpunit:call-original with method
-run_test_step "Call original method" \
-    "test_session_sync "Test command" --step \"phpunit:call-original --class='DateTime' --method='format' --args='Y-m-d'\"" \
+    --step "phpunit:call-original --class='DateTime' --method='format' --args='Y-m-d'" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "Call original method" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
     "original" \
-    "check_contains"
+    --output-check contains
 
 # Test combined other operations
-run_test_step "Combined other operations" \
-    "test_session_sync "Test command" --step \"phpunit:add --value='test'; phpunit:eval --code='2+2'; phpunit:expect --value='4' --equals='4'\"" \
+    --step "phpunit:add --value='test'; phpunit:eval --code='2+2'; phpunit:expect --value='4' --equals='4'" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "Combined other operations" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
     "✅" \
-    "check_contains"
+    --output-check contains
 
 # Test complex eval with function definition
-run_test_step "Eval function definition" \
     "test_session_sync "Test command" --step \"phpunit:eval --code='function test() { return "Hello"; } return test();'\"" \
+test_session_sync "Eval function definition" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
     "Hello" \
-    "check_contains"
+    --output-check contains
 
 # Test verify with false condition
-run_test_step "Verify false condition (should fail)" \
-    "test_session_sync "Test command" --step \"phpunit:verify --condition='false' --message='This should fail'\"" \
+    --step "phpunit:verify --condition='false' --message='This should fail'" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "Verify false condition (should fail)" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
     "❌" \
-    "check_contains"
+    --output-check contains
 
 test_summary

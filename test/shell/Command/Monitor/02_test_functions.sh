@@ -6,14 +6,20 @@
 # Obtenir le répertoire du script et charger les fonctions
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source "$SCRIPT_DIR/../../lib/func/loader.sh"
+source "$SCRIPT_DIR/../../lib/func/test_session_sync_enhanced.sh"
 
 # Initialiser l'environnement de test
 init_test_environment
 init_test "Fonctions définies dans le shell"
 
 # Test des fonctions mathématiques basiques
-test_session_sync "Fonctions mathématiques" \
     --context monitor \
+test_session_sync "Fonctions mathématiques" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
     --input-type multiline \
     --output-check contains \
     --timeout 30 \
@@ -23,8 +29,13 @@ test_session_sync "Fonctions mathématiques" \
     --expect '24'
 
 # Test des fonctions Fibonacci
-test_session_sync "Fonctions Fibonacci" \
     --context monitor \
+test_session_sync "Fonctions Fibonacci" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
     --input-type multiline \
     --output-check contains \
     --timeout 30 \
@@ -34,8 +45,13 @@ test_session_sync "Fonctions Fibonacci" \
     --expect '55'
 
 # Test des fonctions avec arrays
-test_session_sync "Fonctions avec arrays" \
     --context monitor \
+test_session_sync "Fonctions avec arrays" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
     --input-type multiline \
     --output-check contains \
     --timeout 30 \
@@ -45,8 +61,13 @@ test_session_sync "Fonctions avec arrays" \
     --expect '100'
 
 # Test des fonctions avec closures
-test_session_sync "Fonctions avec closures" \
     --context monitor \
+test_session_sync "Fonctions avec closures" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
     --input-type multiline \
     --output-check contains \
     --timeout 30 \
@@ -56,8 +77,13 @@ test_session_sync "Fonctions avec closures" \
     --expect '15'
 
 # Test des erreurs de fonctions
-test_session_sync "Erreurs de fonctions" \
     --context monitor \
+test_session_sync "Erreurs de fonctions" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
     --input-type multiline \
     --output-check error \
     --timeout 30 \
@@ -70,8 +96,13 @@ test_session_sync "Erreurs de fonctions" \
     --expect 'infinite loop|stack depth|Maximum function nesting level'
 
 # Test de synchronisation - fonctions persistantes
-test_session_sync "Synchronisation des fonctions" \
     --context monitor \
+test_session_sync "Synchronisation des fonctions" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "sync_session"
     --input-type multiline \
     --output-check contains \
     --timeout 60 \

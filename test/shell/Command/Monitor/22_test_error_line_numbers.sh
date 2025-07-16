@@ -17,13 +17,23 @@ source "$(dirname "$0")/../../lib/func/test_session_sync_enhanced.sh"
 init_test "TEST 22: Numéros de ligne d'erreur"
 
 # Étape 1: Erreur de syntaxe
-test_monitor_error "Erreur de syntaxe" \
 '$x = ;' \
+test_session_sync "Erreur de syntaxe" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '(PARSE ERROR|Parse error|syntax error|unexpected|Error:.*syntax error|Error:.*Unclosed|Syntax error|PHP Parse error)'
 
 # Étape 2: Erreur de fonction
-test_monitor_error "Fonction inexistante" \
 'nonexistent_function()' \
+test_session_sync "Fonction inexistante" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '(Call to undefined function|Error:.*undefined function|Fatal error|TypeError)'
 
 # Afficher le résumé

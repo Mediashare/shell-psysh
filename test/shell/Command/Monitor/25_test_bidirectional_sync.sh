@@ -18,96 +18,165 @@ init_test "TEST 25: Synchronisation bidirectionnelle approfondie"
 # === TESTS FONDAMENTAUX DE SYNCHRONISATION ===
 
 # Étape 1: Variable simple monitor -> shell
-test_shell_responsiveness "Variable monitor -> shell" \
 '$sync_test = "from_monitor";' \
+test_session_sync "Variable monitor -> shell" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context shell \
+    --output-check contains \
+    --shell \
+    --tag "shell_session"
 'echo $sync_test' \
 'from_monitor'
 
 # Étape 2: Variable shell -> monitor
-test_shell_responsiveness "Variable shell -> monitor" \
 '$shell_var = "from_shell";' \
+test_session_sync "Variable shell -> monitor" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context shell \
+    --output-check contains \
+    --shell \
+    --tag "shell_session"
 'echo $shell_var' \
 'from_shell'
 
 # Étape 3: Modification bidirectionnelle
-test_shell_responsiveness "Modification bidirectionnelle" \
 '$counter = 10;' \
+test_session_sync "Modification bidirectionnelle" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '$counter += 5; echo $counter' \
 '15'
 
 # === TESTS AVEC TYPES COMPLEXES ===
 
 # Étape 4: Arrays persistants
-test_shell_responsiveness "Arrays persistants" \
 '$shared_array = [1, 2, 3];' \
+test_session_sync "Arrays persistants" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '$shared_array[] = 4; echo count($shared_array)' \
 '4'
 
 # Étape 5: Objets persistants
-test_shell_responsiveness "Objets persistants" \
 '$obj = new stdClass(); $obj->prop = "initial";' \
+test_session_sync "Objets persistants" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '$obj->prop = "modified"; echo $obj->prop' \
 'modified'
 
 # Étape 6: Closures et fonctions
-test_shell_responsiveness "Fonctions persistantes" \
 'function persistent_func($x) { return $x * 2; }' \
+test_session_sync "Fonctions persistantes" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 'echo persistent_func(21)' \
 '42'
 
 # === TESTS DE PORTÉE ET ISOLATION ===
 
 # Étape 7: Variables globales vs locales
-test_shell_responsiveness "Variables globales" \
 '$GLOBALS["global_var"] = "global_value";' \
+test_session_sync "Variables globales" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 'echo $GLOBALS["global_var"]' \
 'global_value'
 
 # Étape 8: Superglobales
-test_shell_responsiveness "Superglobales personnalisées" \
 '$_SESSION["test"] = "session_value";' \
+test_session_sync "Superglobales personnalisées" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 'echo $_SESSION["test"]' \
 'session_value'
 
 # === TESTS DE PERSISTANCE AVANCÉE ===
 
 # Étape 9: État entre plusieurs monitors consécutifs
-test_shell_responsiveness "État multi-monitor" \
 'if (!isset($state)) { $state = 0; } $state++;' \
+test_session_sync "État multi-monitor" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context monitor \
+    --output-check contains \
+    --tag "monitor_session"
 'echo ++$state' \
 '2'
 
 # Étape 10: Accumulation de données
-test_shell_responsiveness "Accumulation de données" \
 'if (!isset($accumulator)) { $accumulator = []; } $accumulator[] = "first";' \
+test_session_sync "Accumulation de données" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '$accumulator[] = "second"; echo implode(",", $accumulator)' \
 'first,second'
 
 # === TESTS DE CAS LIMITES ===
 
 # Étape 11: Variables avec noms spéciaux
-test_shell_responsiveness "Variables noms spéciaux" \
 '$_special_var = "special";' \
+test_session_sync "Variables noms spéciaux" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 'echo $_special_var' \
 'special'
 
 # Étape 12: Références et pointeurs
-test_shell_responsiveness "Références PHP" \
 '$a = 5; $b = &$a; $b = 10;' \
+test_session_sync "Références PHP" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 'echo $a' \
 '10'
 
 # === TESTS DE NETTOYAGE ET ISOLATION ===
 
 # Étape 13: Suppression de variables
-test_shell_responsiveness "Suppression de variables" \
 '$temp_var = "temporary";' \
+test_session_sync "Suppression de variables" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 'unset($temp_var); echo isset($temp_var) ? "exists" : "deleted"' \
 'deleted'
 
 # Étape 14: Isolation des espaces de noms
-test_monitor_multiline "Espaces de noms" \
 'namespace TestSpace {
+test_session_sync "Espaces de noms" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
     function test() {
         return "namespaced";
     }
@@ -120,40 +189,70 @@ namespace {
 # === TESTS DE ROBUSTESSE ===
 
 # Étape 15: Variables avec caractères Unicode
-test_shell_responsiveness "Variables Unicode" \
 '$emoji1 = "🚀"; $emoji2 = "test";' \
+test_session_sync "Variables Unicode" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 'echo $emoji1 . $emoji2' \
 '🚀test'
 
 # Étape 16: Variables avec contenu binaire
-test_shell_responsiveness "Contenu binaire" \
 '$binary = pack("H*", "48656c6c6f");' \
+test_session_sync "Contenu binaire" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 'echo $binary' \
 'Hello'
 
 # === TESTS DE PERFORMANCE ET LIMITES ===
 
 # Étape 17: Grande quantité de variables
-test_monitor_performance "Nombreuses variables" \
 'for ($i = 0; $i < 100; $i++) { ${"var_$i"} = $i; } echo $var_99' \
+test_session_sync "Nombreuses variables" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '2'
 
 # Étape 18: Variables avec contenu volumineux
-test_monitor_performance "Variables volumineuses" \
 '$large_string = str_repeat("x", 10000); strlen($large_string)' \
+test_session_sync "Variables volumineuses" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '3'
 
 # === TESTS DE SYNCHRONISATION TEMPS RÉEL ===
 
 # Étape 19: Modifications simultanées
-test_shell_responsiveness "Modifications simultanées" \
 '$shared = 1;' \
+test_session_sync "Modifications simultanées" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '$shared *= 2; $shared += 3; echo $shared' \
 '5'
 
 # Étape 20: État complexe persistant
-test_monitor_multiline "État complexe" \
 'class StateManager {
+test_session_sync "État complexe" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
     public static $data = [];
     public static function add($key, $val) {
         self::$data[$key] = $val;

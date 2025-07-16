@@ -13,76 +13,66 @@ echo "🧪 Testing phpunit:code command..."
 
 # Test 1: Basic code mode activation
 echo "📝 Test 1: Basic code mode activation"
-{
-    echo 'phpunit:create TestService'
-    echo 'phpunit:code'
-    echo 'exit'
-} | $PSYSH_CMD --no-interactive > /tmp/psysh_code_1.out 2>&1 || true
-if grep -q -E "(Mode code|code activé)" /tmp/psysh_code_1.out; then
-    echo "✅ Basic code mode activation works"
-else
-    echo "❌ Basic code mode activation failed"
-    cat /tmp/psysh_code_1.out
-fi
+
+    --step "phpunit:create TestService; phpunit:code; exit" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "Basic code mode activation" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
+    --expect "✅" \
+    --context phpunit
+
 
 # Test 2: Code mode with variable creation
 echo "📝 Test 2: Code mode with variable creation"
-{
-    echo 'phpunit:create UserService'
-    echo 'phpunit:code'
-    echo '$user = new stdClass()'
-    echo '$user->name = "John"'
-    echo 'exit'
-} | $PSYSH_CMD --no-interactive > /tmp/psysh_code_2.out 2>&1 || true
-if grep -q -E "(Mode code|variables|ajoutée)" /tmp/psysh_code_2.out; then
-    echo "✅ Code mode with variables works"
-else
-    echo "❌ Code mode with variables failed"
-    cat /tmp/psysh_code_2.out
-fi
+
+    --step "phpunit:create UserService; phpunit:code; $user = new stdClass(); $user->name = "John"; exit" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "Code mode with variable creation" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
+    --expect "✅" \
+    --context phpunit
+
 
 # Test 3: Error handling - no test created first
 echo "📝 Test 3: Error handling - no test created first"
 echo 'phpunit:code' | $PSYSH_CMD --no-interactive > /tmp/psysh_code_3.out 2>&1 || true
 if grep -q -E "(Aucun test|test actuel|error)" /tmp/psysh_code_3.out; then
-    echo "✅ Error handling works"
 else
-    echo "❌ Error handling failed"
     cat /tmp/psysh_code_3.out
 fi
 
 # Test 4: Code mode with method calls
-echo "📝 Test 4: Code mode with method calls"
-{
-    echo 'phpunit:create ServiceTest'
-    echo 'phpunit:code'
-    echo '$data = ["key" => "value"]'
-    echo '$result = array_keys($data)'
-    echo 'exit'
-} | $PSYSH_CMD --no-interactive > /tmp/psysh_code_4.out 2>&1 || true
-if grep -q -E "(Mode code|terminé)" /tmp/psysh_code_4.out; then
-    echo "✅ Code mode with method calls works"
-else
-    echo "❌ Code mode with method calls failed"
-    cat /tmp/psysh_code_4.out
-fi
+
+    --step "✅ Error handling works; ❌ Error handling failed; 📝 Test 4: Code mode with method calls; phpunit:create ServiceTest; phpunit:code; $data = ["key" => "value"]; $result = array_keys($data); exit" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "Error handling - no test created first" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
+    --expect "✅" \
+    --context phpunit
+
 
 # Test 5: Code mode with complex objects
 echo "📝 Test 5: Code mode with complex objects"
-{
-    echo 'phpunit:create ComplexService'
-    echo 'phpunit:code'
-    echo '$config = new stdClass()'
-    echo '$config->debug = true'
-    echo '$config->env = "test"'
-    echo 'exit'
-} | $PSYSH_CMD --no-interactive > /tmp/psysh_code_5.out 2>&1 || true
-if grep -q -E "(Mode code|terminé)" /tmp/psysh_code_5.out; then
-    echo "✅ Code mode with complex objects works"
-else
-    echo "❌ Code mode with complex objects failed"
-    cat /tmp/psysh_code_5.out
-fi
+
+    --step "phpunit:create ComplexService; phpunit:code; $config = new stdClass(); $config->debug = true; $config->env = "test"; exit" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "Code mode with complex objects" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
+    --expect "✅" \
+    --context phpunit
+
 
 # Clean up
 rm -f /tmp/psysh_code_*.out

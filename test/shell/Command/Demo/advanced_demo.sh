@@ -30,31 +30,47 @@ echo ""
 echo -e "${PURPLE}=== SECTION 1: Tests Monitor ===${NC}"
 
 # Test monitor simple avec echo
-test_execute "Monitor simple avec echo" \
-'$x = 42; echo $x;' \
-"42" \
---context=monitor --input-type=echo
+    --step '$x = 42; echo $x;' \
+test_session_sync "Monitor simple avec echo" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context monitor \
+    --output-check contains \
+    --tag "monitor_session"
+    --expect "42" \
+    --context monitor --input-type echo
 
 # Test monitor avec input multilignes
-test_execute "Monitor multilignes" \
-'$a = 10;
+    --step '$a = 10;
+test_session_sync "Monitor multilignes" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context monitor \
+    --output-check contains \
+    --tag "monitor_session"
 $b = 20;
 $result = $a + $b;
 echo $result;' \
-"30" \
---context=monitor --input-type=multiline
+    --expect "30" \
+    --context monitor --input-type multiline
 
 # Test monitor avec vérification regex
-test_execute "Monitor avec regex" \
-'echo date("Y-m-d");' \
-"[0-9]{4}-[0-9]{2}-[0-9]{2}" \
---context=monitor --output-check=regex
+    --step 'echo date("Y-m-d");' \
+test_session_sync "Monitor avec regex" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context monitor \
+    --output-check contains \
+    --tag "monitor_session"
+    --expect "[0-9]{4}-[0-9]{2}-[0-9]{2}" \
+    --context monitor --output-check regex
 
 # Test monitor avec retry automatique
-test_execute "Monitor avec retry" \
-'echo "test";' \
-"test" \
---context=monitor --retry=3 --timeout=5
+    --step 'echo "test";' \
+test_session_sync "Monitor avec retry" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context monitor \
+    --output-check contains \
+    --tag "monitor_session"
+    --expect "test" \
+    --context monitor --retry 3 --timeout 5
 
 # =============================================================================
 # SECTION 2: TESTS PHPUNIT AVEC OPTIONS AVANCÉES
@@ -63,16 +79,24 @@ test_execute "Monitor avec retry" \
 echo -e "${PURPLE}=== SECTION 2: Tests PHPUnit avancés ===${NC}"
 
 # Test phpunit avec assertion complexe
-test_execute "PHPUnit assert complexe" \
 "assert 'array_sum([1,2,3]) == 6' --message='Array sum test'" \
+test_session_sync "PHPUnit assert complexe" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
 "✅" \
---context=phpunit
+--context phpunit
 
 # Test phpunit avec vérification exacte
-test_execute "PHPUnit vérification exacte" \
 "assert 'true'" \
+test_session_sync "PHPUnit vérification exacte" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
 "✅ Assertion réussie" \
---context=phpunit --output-check=exact
+--context phpunit --output-check exact
 
 # =============================================================================
 # SECTION 3: TESTS SHELL ET MIXED
@@ -81,16 +105,26 @@ test_execute "PHPUnit vérification exacte" \
 echo -e "${PURPLE}=== SECTION 3: Tests Shell et Mixed ===${NC}"
 
 # Test shell simple
-test_execute "Shell simple" \
 "echo 'Hello from shell'" \
+test_session_sync "Shell simple" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context shell \
+    --output-check contains \
+    --shell \
+    --tag "shell_session"
 "Hello from shell" \
---context=shell
+--context shell
 
 # Test mixed (combinaison shell + monitor)
-test_execute "Test mixte shell + monitor" \
 "echo 'Setup' && monitor 'echo \"PsySH ready\";'" \
+test_session_sync "Test mixte shell + monitor" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context shell \
+    --output-check contains \
+    --shell \
+    --tag "shell_session"
 "PsySH ready" \
---context=mixed
+--context mixed
 
 # =============================================================================
 # SECTION 4: TESTS AVEC FICHIERS
@@ -102,7 +136,15 @@ echo -e "${PURPLE}=== SECTION 4: Tests avec fichiers ===${NC}"
 echo 'monitor "$x = \"Hello World\"; echo $x;"' > /tmp/demo_test.txt
 
 # Test depuis fichier
-test_from_file "Test depuis fichier" "/tmp/demo_test.txt" "Hello World"
+    --step "cat /tmp/demo_test.txt" \ --context psysh --output-check contains --tag "default_session"
+test_session_sync "Test depuis fichier" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
+    --expect "Hello World" \
+    --context shell
 
 # Nettoyage
 rm -f /tmp/demo_test.txt
@@ -114,15 +156,25 @@ rm -f /tmp/demo_test.txt
 echo -e "${PURPLE}=== SECTION 5: Tests d'erreurs ===${NC}"
 
 # Test d'erreur avec pattern spécifique
-test_error_pattern "Pattern d'erreur" \
 'undefined_function();' \
+test_session_sync "Pattern d'erreur" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 "Call to undefined function"
 
 # Test avec vérification d'erreur
-test_execute "Test d'erreur attendue" \
 '1/0;' \
+test_session_sync "Test d'erreur attendue" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 "Division by zero" \
---context=monitor --output-check=error
+--context monitor --output-check error
 
 # =============================================================================
 # SECTION 6: TESTS DE SYNCHRONISATION
@@ -131,10 +183,15 @@ test_execute "Test d'erreur attendue" \
 echo -e "${PURPLE}=== SECTION 6: Tests de synchronisation ===${NC}"
 
 # Test de synchronisation bidirectionnelle
-test_execute "Synchronisation variables" \
 '$global_var = 123;' \
+test_session_sync "Synchronisation variables" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "sync_session"
 "123" \
---context=monitor --sync-test
+--context monitor --sync-test
 
 # =============================================================================
 # SECTION 7: TESTS COMBINÉS ET COMPLEXES
@@ -143,8 +200,13 @@ test_execute "Synchronisation variables" \
 echo -e "${PURPLE}=== SECTION 7: Tests combinés ===${NC}"
 
 # Test combiné multiple commandes
-test_combined_commands "Combinaison complexe" \
 '$x = 5;' \
+test_session_sync "Combinaison complexe" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '$y = 10;' \
 'echo $x + $y;' \
 "15"
@@ -156,16 +218,26 @@ test_combined_commands "Combinaison complexe" \
 echo -e "${PURPLE}=== SECTION 8: Tests de performance ===${NC}"
 
 # Test avec timeout court
-test_execute "Test avec timeout" \
 'sleep(1); echo \"done\";' \
+test_session_sync "Test avec timeout" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 "done" \
---context=monitor --timeout=2
+--context monitor --timeout 2
 
 # Test avec debug activé
-test_execute "Test avec debug" \
 'echo \"debug test\";' \
+test_session_sync "Test avec debug" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 "debug test" \
---context=monitor --debug
+--context monitor --debug
 
 # =============================================================================
 # SECTION 9: DÉMONSTRATION DES TYPES DE VÉRIFICATION
@@ -174,28 +246,48 @@ test_execute "Test avec debug" \
 echo -e "${PURPLE}=== SECTION 9: Types de vérification ===${NC}"
 
 # Vérification contains (par défaut)
-test_execute "Vérification contains" \
 'echo \"Hello World\";' \
+test_session_sync "Vérification contains" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 "World" \
---context=monitor --output-check=contains
+--context monitor --output-check contains
 
 # Vérification exacte
-test_execute "Vérification exacte" \
 'echo "42";' \
+test_session_sync "Vérification exacte" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 "42" \
---context=monitor --output-check=exact
+--context monitor --output-check exact
 
 # Vérification regex
-test_execute "Vérification regex" \
 'echo \"test123\";' \
+test_session_sync "Vérification regex" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 "test[0-9]+" \
---context=monitor --output-check=regex
+--context monitor --output-check regex
 
 # Vérification négative
-test_execute "Vérification négative" \
 'echo "success";' \
+test_session_sync "Vérification négative" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 "error" \
---context=monitor --output-check=not_contains
+--context monitor --output-check not_contains
 
 # =============================================================================
 # SECTION 10: UTILISATION DES FONCTIONS DE CONVENANCE
@@ -204,11 +296,46 @@ test_execute "Vérification négative" \
 echo -e "${PURPLE}=== SECTION 10: Fonctions de convenance ===${NC}"
 
 # Utilisation des fonctions héritées pour backward compatibility
-test_monitor "Monitor simple legacy" 'echo "legacy test";' "legacy test"
-test_monitor_multiline "Monitor multilignes legacy" '$x = "test"; echo $x;' "test"
-test_monitor_expression "Monitor expression legacy" 'array_sum([1,2,3])' "6"
-test_monitor_error "Monitor erreur legacy" 'undefined_var' "Undefined"
-test_phpunit "PHPUnit legacy" 'assert "true"' "✅"
+    --step "echo "legacy test";" \ --context psysh --output-check contains --tag "default_session"
+test_session_sync "Monitor simple legacy" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context monitor \
+    --output-check contains \
+    --tag "monitor_session"
+    --expect "legacy test" \
+    --context monitor
+    --step '$x = \
+test_session_sync "Monitor multilignes legacy" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context monitor \
+    --output-check contains \
+    --tag "monitor_session"
+    --expect "test" \
+    --context monitor --input-type multiline; echo $x;' "test"
+    --step 'array_sum([1,2,3])' \
+test_session_sync "Monitor expression legacy" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context monitor \
+    --output-check contains \
+    --tag "monitor_session"
+    --expect "6" \
+    --context monitor --output-check result
+    --step 'undefined_var' \
+test_session_sync "Monitor erreur legacy" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context monitor \
+    --output-check contains \
+    --tag "monitor_session"
+    --expect "Undefined" \
+    --context monitor --output-check error
+    --step "assert "true"" \ --context psysh --output-check contains --tag "default_session"
+test_session_sync "PHPUnit legacy" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
+    --expect "✅" \
+    --context phpunit
 
 # =============================================================================
 # RÉSUMÉ ET NETTOYAGE

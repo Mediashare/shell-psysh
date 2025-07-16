@@ -18,32 +18,52 @@ init_test "TEST 24: Synchronisation complète Shell <-> Monitor"
 # ===== TESTS DE SYNCHRONISATION DES VARIABLES =====
 
 # Test 1: Variable simple Shell -> Monitor
-test_sync_bidirectional "Variable simple Shell -> Monitor" \
 '$x = 42;' \
+test_session_sync "Variable simple Shell -> Monitor" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context shell \
+    --output-check contains \
+    --shell \
+    --tag "shell_session"
 '$y = $x * 2; echo $y;' \
 'echo "Résultat: $y";' \
 '84' \
 'variable'
 
 # Test 2: Variable Monitor -> Shell
-test_sync_bidirectional "Variable Monitor -> Shell" \
 '' \
+test_session_sync "Variable Monitor -> Shell" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context shell \
+    --output-check contains \
+    --shell \
+    --tag "shell_session"
 '$result = 100;' \
 'echo "Résultat: $result";' \
 '100' \
 'variable'
 
 # Test 3: Variable avec calcul complexe
-test_sync_bidirectional "Variable avec calcul complexe" \
 '$base = 10;' \
+test_session_sync "Variable avec calcul complexe" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '$calculated = pow($base, 3) + 50;' \
 'echo "Résultat: $calculated";' \
 '1050' \
 'variable'
 
 # Test 4: Array synchronisation
-test_sync_bidirectional "Array synchronisation" \
 '$arr = [1, 2, 3];' \
+test_session_sync "Array synchronisation" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "sync_session"
 '$arr[] = 4; $sum = array_sum($arr);' \
 'echo "Somme: $sum";' \
 '10' \
@@ -52,32 +72,52 @@ test_sync_bidirectional "Array synchronisation" \
 # ===== TESTS DE SYNCHRONISATION DES FONCTIONS =====
 
 # Test 5: Fonction définie dans Shell, utilisée dans Monitor
-test_sync_bidirectional "Fonction Shell -> Monitor" \
 'function multiply($a, $b) { return $a * $b; }' \
+test_session_sync "Fonction Shell -> Monitor" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context shell \
+    --output-check contains \
+    --shell \
+    --tag "shell_session"
 '$result = multiply(7, 8);' \
 'echo "Résultat: $result";' \
 '56' \
 'function'
 
 # Test 6: Fonction définie dans Monitor, utilisée dans Shell
-test_sync_bidirectional "Fonction Monitor -> Shell" \
 '' \
+test_session_sync "Fonction Monitor -> Shell" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context shell \
+    --output-check contains \
+    --shell \
+    --tag "shell_session"
 'function divide($a, $b) { return $a / $b; }' \
 'echo "Résultat: " . divide(100, 4);' \
 '25' \
 'function'
 
 # Test 7: Fonction récursive
-test_sync_bidirectional "Fonction récursive" \
 'function factorial($n) { if ($n <= 1) return 1; return $n * factorial($n - 1); }' \
+test_session_sync "Fonction récursive" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '$fact5 = factorial(5);' \
 'echo "5! = $fact5";' \
 '120' \
 'function'
 
 # Test 8: Closure avec variables externes
-test_sync_bidirectional "Closure avec variables externes" \
 '$multiplier = 5;' \
+test_session_sync "Closure avec variables externes" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '$closure = function($x) use ($multiplier) { return $x * $multiplier; }; $result = $closure(8);' \
 'echo "Résultat: $result";' \
 '40' \
@@ -86,32 +126,52 @@ test_sync_bidirectional "Closure avec variables externes" \
 # ===== TESTS DE SYNCHRONISATION DES CLASSES =====
 
 # Test 9: Classe définie dans Shell, utilisée dans Monitor
-test_sync_bidirectional "Classe Shell -> Monitor" \
 'class Calculator { public function add($a, $b) { return $a + $b; } }' \
+test_session_sync "Classe Shell -> Monitor" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context shell \
+    --output-check contains \
+    --shell \
+    --tag "shell_session"
 '$calc = new Calculator(); $result = $calc->add(15, 25);' \
 'echo "Résultat: $result";' \
 '40' \
 'class'
 
 # Test 10: Classe définie dans Monitor, utilisée dans Shell
-test_sync_bidirectional "Classe Monitor -> Shell" \
 '' \
+test_session_sync "Classe Monitor -> Shell" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context shell \
+    --output-check contains \
+    --shell \
+    --tag "shell_session"
 'class Counter { private $count = 0; public function increment() { return ++$this->count; } public function getCount() { return $this->count; } }' \
 '$counter = new Counter(); $counter->increment(); $counter->increment(); echo "Count: " . $counter->getCount();' \
 '2' \
 'class'
 
 # Test 11: Classe avec propriétés statiques
-test_sync_bidirectional "Classe avec propriétés statiques" \
-'class Config { public static $version = "1.0"; public static function getVersion() { return self::$version; } }' \
+'class Config { public static $version = --expect "1.0"; public static function getVersion() { return self::$version; } }' \
+test_session_sync "Classe avec propriétés statiques" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 'Config::$version = "2.0"; $version = Config::getVersion();' \
 'echo "Version: $version";' \
 '2.0' \
 'class'
 
 # Test 12: Héritage de classe
-test_sync_bidirectional "Héritage de classe" \
 'class Animal { public function speak() { return "Some sound"; } } class Dog extends Animal { public function speak() { return "Woof!"; } }' \
+test_session_sync "Héritage de classe" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '$dog = new Dog(); $sound = $dog->speak();' \
 'echo "Dog says: $sound";' \
 'Woof!' \
@@ -120,16 +180,26 @@ test_sync_bidirectional "Héritage de classe" \
 # ===== TESTS DE SYNCHRONISATION DES TRAITS =====
 
 # Test 13: Trait défini dans Shell, utilisé dans Monitor
-test_sync_bidirectional "Trait Shell -> Monitor" \
 'trait Loggable { public function log($message) { return "LOG: " . $message; } } class Service { use Loggable; }' \
+test_session_sync "Trait Shell -> Monitor" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context shell \
+    --output-check contains \
+    --shell \
+    --tag "shell_session"
 '$service = new Service(); $logged = $service->log("Test message");' \
 'echo $logged;' \
 'LOG: Test message' \
 'trait'
 
 # Test 14: Trait défini dans Monitor, utilisé dans Shell
-test_sync_bidirectional "Trait Monitor -> Shell" \
 '' \
+test_session_sync "Trait Monitor -> Shell" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context shell \
+    --output-check contains \
+    --shell \
+    --tag "shell_session"
 'trait Timestampable { public function timestamp() { return date("Y-m-d"); } } class Document { use Timestampable; }' \
 '$doc = new Document(); $date = $doc->timestamp(); echo "Date: $date";' \
 "Date: $(date '+%Y-%m-%d')" \
@@ -138,16 +208,26 @@ test_sync_bidirectional "Trait Monitor -> Shell" \
 # ===== TESTS DE SYNCHRONISATION DES VARIABLES GLOBALES =====
 
 # Test 15: Variable globale Shell -> Monitor
-test_sync_bidirectional "Variable globale Shell -> Monitor" \
-'$GLOBALS["config"] = ["debug" => true, "version" => "1.0"];' \
+'$GLOBALS["config"] = ["debug" => true, "version" => --expect "1.0"];' \
+test_session_sync "Variable globale Shell -> Monitor" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context shell \
+    --output-check contains \
+    --shell \
+    --tag "shell_session"
 '$debug = $GLOBALS["config"]["debug"]; $version = $GLOBALS["config"]["version"];' \
 'echo "Debug: " . ($debug ? "true" : "false") . ", Version: $version";' \
 'Debug: true, Version: 1.0' \
 'global'
 
 # Test 16: Variable globale Monitor -> Shell
-test_sync_bidirectional "Variable globale Monitor -> Shell" \
 '' \
+test_session_sync "Variable globale Monitor -> Shell" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context shell \
+    --output-check contains \
+    --shell \
+    --tag "shell_session"
 '$GLOBALS["results"] = ["success" => true, "count" => 42];' \
 '$success = $GLOBALS["results"]["success"]; $count = $GLOBALS["results"]["count"]; echo "Success: " . ($success ? "true" : "false") . ", Count: $count";' \
 'Success: true, Count: 42' \
@@ -156,16 +236,26 @@ test_sync_bidirectional "Variable globale Monitor -> Shell" \
 # ===== TESTS DE SYNCHRONISATION DES CONSTANTES =====
 
 # Test 17: Constante définie dans Shell, utilisée dans Monitor
-test_sync_bidirectional "Constante Shell -> Monitor" \
 'define("MAX_USERS", 100);' \
+test_session_sync "Constante Shell -> Monitor" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context shell \
+    --output-check contains \
+    --shell \
+    --tag "shell_session"
 '$limit = MAX_USERS * 2;' \
 'echo "Limite: $limit";' \
 '200' \
 'constant'
 
 # Test 18: Constante définie dans Monitor, utilisée dans Shell
-test_sync_bidirectional "Constante Monitor -> Shell" \
 '' \
+test_session_sync "Constante Monitor -> Shell" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context shell \
+    --output-check contains \
+    --shell \
+    --tag "shell_session"
 'define("API_VERSION", "v2.1");' \
 'echo "API Version: " . API_VERSION;' \
 'API Version: v2.1' \
@@ -174,16 +264,26 @@ test_sync_bidirectional "Constante Monitor -> Shell" \
 # ===== TESTS DE SYNCHRONISATION COMPLEXES =====
 
 # Test 19: Combinaison variables + fonctions
-test_sync_bidirectional "Combinaison variables + fonctions" \
 '$data = [1, 2, 3, 4, 5]; function processData($arr) { return array_map(function($x) { return $x * $x; }, $arr); }' \
+test_session_sync "Combinaison variables + fonctions" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '$processed = processData($data); $sum = array_sum($processed);' \
 'echo "Somme des carrés: $sum";' \
 '55' \
 'mixed'
 
 # Test 20: Combinaison classe + trait + variables
-test_sync_bidirectional "Combinaison classe + trait + variables" \
 'trait Calculable { public function calculate($a, $b) { return $a + $b; } } class MathService { use Calculable; } $service = new MathService();' \
+test_session_sync "Combinaison classe + trait + variables" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '$result = $service->calculate(25, 17);' \
 'echo "Résultat: $result";' \
 '42' \
@@ -192,16 +292,26 @@ test_sync_bidirectional "Combinaison classe + trait + variables" \
 # ===== TESTS DE SYNCHRONISATION BIDIRECTIONNELLE =====
 
 # Test 21: Modification bidirectionnelle d'une variable
-test_sync_bidirectional "Modification bidirectionnelle variable" \
 '$counter = 10;' \
+test_session_sync "Modification bidirectionnelle variable" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '$counter += 5; echo "Dans monitor: $counter";' \
 '$counter += 3; echo "Dans shell: $counter";' \
 'Dans monitor: 15' \
 'bidirectional'
 
 # Test 22: Modification bidirectionnelle d'un array
-test_sync_bidirectional "Modification bidirectionnelle array" \
 '$items = ["a", "b"];' \
+test_session_sync "Modification bidirectionnelle array" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '$items[] = "c"; echo "Items: " . implode(", ", $items);' \
 '$items[] = "d"; echo "Final: " . implode(", ", $items);' \
 'Items: a, b, c' \
@@ -210,24 +320,39 @@ test_sync_bidirectional "Modification bidirectionnelle array" \
 # ===== TESTS DE SYNCHRONISATION AVANCÉE =====
 
 # Test 23: Namespace et classes (bug de synchronisation namespace)
-test_sync_bidirectional "Namespace et classes (bug de synchronisation namespace)" \
 '' \
+test_session_sync "Namespace et classes (bug de synchronisation namespace)" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "sync_session"
 'namespace App\Services; class UserService { public function getUserCount() { return 150; } } $service = new UserService(); $count = $service->getUserCount(); echo "Users: $count";' \
 '' \
 'Users: 150' \
 'namespace'
 
 # Test 24: Interface et implémentation
-test_sync_bidirectional "Interface et implémentation" \
 'interface Drawable { public function draw(); } class Circle implements Drawable { public function draw() { return "Drawing a circle"; } }' \
+test_session_sync "Interface et implémentation" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '$circle = new Circle(); $drawing = $circle->draw();' \
 'echo $drawing;' \
 'Drawing a circle' \
 'interface'
 
 # Test 25: Exception handling
-test_sync_bidirectional "Exception handling" \
 'class CustomException extends Exception {} function riskyFunction() { throw new CustomException("Test error"); }' \
+test_session_sync "Exception handling" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 'try { riskyFunction(); } catch (CustomException $e) { echo "Caught: " . $e->getMessage(); }' \
 'echo "Test completed";' \
 'Caught: Test error' \

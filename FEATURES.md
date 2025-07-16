@@ -42,6 +42,8 @@ Il doit être possible de lancer la commande phpunit:assert $result === 42 sans 
 ### Composer Require Package
 Quelle est la meilleur manière d"extend la commande psysh à partir d'un composer require package ? Le but étant d'être le plus flexible possible pour rajouter les fonctionnalités du package composer et cela de manière intelligente. Il faut savoir que l'extension de psysh comprend des nouvelles commandes psysh shell avec des extends Psy\Command\Command (provenant du package psy/psysh) et l'autoloading automatique du projet et de ces principal où l'on require le package d'extension psysh, car cela permet d'avoir de l'auto suggestion sur les namespaces et permet aussi d'avoir accès par exemple au $container et services de symfony si le projet principal est un symfony ...
 ### ./tests
+#### test_session_sync
+Utilise les --options de test_session_sync pour créer des tests complexe mélangeant plusieurs --step, plusieurs --input-type, plusieurs --context
 #### Symfony
 Dans des tests en shell testant les commandes custom psysh j'ai une partie qui test l'implémentation du package dans un projet symfony (du genre récupération des variables $container, $em, ect... dans le shell psysh avec l'option --config config/config.php), mais je ne sais pas comment faire pour tester ces features... suis je obligé d'installer un projet symfony dans le package ? Puis je passer par un composer require --dev du package symfony ?
 #### Standard

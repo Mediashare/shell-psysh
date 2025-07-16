@@ -16,13 +16,23 @@ source "$(dirname "$0")/../../lib/func/test_session_sync_enhanced.sh"
 init_test "TEST 19: Iterators"
 
 # Étape 1: Iterator simple
-test_monitor_expression "ArrayIterator" \
 '$arr = [1, 2, 3]; $it = new ArrayIterator($arr); $it->rewind(); echo $it->current()' \
+test_session_sync "ArrayIterator" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '1'
 
 # Étape 2: Foreach avec iterator
-test_monitor_multiline "Foreach avec iterator" \
 '$data = ["a" => 1, "b" => 2, "c" => 3];
+test_session_sync "Foreach avec iterator" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 $it = new ArrayIterator($data);
 $result = [];
 foreach ($it as $key => $value) {
@@ -32,8 +42,13 @@ echo implode(", ", $result);' \
 'a=1, b=2, c=3'
 
 # Étape 3: Iterator SPL
-test_monitor_expression "Iterator SPL" \
 '$it = new ArrayIterator(["file1.txt", "file2.txt"]); echo count(iterator_to_array($it))' \
+test_session_sync "Iterator SPL" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '2'
 
 # Afficher le résumé

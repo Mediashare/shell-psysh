@@ -16,8 +16,13 @@ source "$(dirname "$0")/../../lib/func/test_session_sync_enhanced.sh"
 init_test "TEST 13: Closures et callbacks"
 
 # Étape 1: Closure basique avec capture
-test_monitor_multiline "Closure multiplier" \
 '$multiplier = function($factor) {
+test_session_sync "Closure multiplier" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
     return function($x) use ($factor) {
         return $x * $factor;
     };
@@ -27,8 +32,13 @@ echo $double(5);' \
 '10'
 
 # Étape 2: Array_map avec closure
-test_monitor_multiline "Array_map avec closure" \
 '$multiplier = function($factor) {
+test_session_sync "Array_map avec closure" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
     return function($x) use ($factor) {
         return $x * $factor;
     };
@@ -39,13 +49,23 @@ echo implode(", ", $result);' \
 '3, 6, 9'
 
 # Étape 3: Callback avec array_filter
-test_monitor_expression "Filter avec callback" \
 '$numbers = [1, 2, 3, 4, 5, 6]; $evens = array_filter($numbers, function($x) { return $x % 2 == 0; }); echo implode(", ", $evens)' \
+test_session_sync "Filter avec callback" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '2, 4, 6'
 
 # Étape 4: Closure avec multiple captures
-test_monitor_multiline "Closure multiple captures" \
 '$base = 10;
+test_session_sync "Closure multiple captures" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 $offset = 5;
 $calculator = function($x) use ($base, $offset) {
     return ($x + $offset) * $base;

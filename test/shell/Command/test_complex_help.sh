@@ -18,227 +18,398 @@ init_test "Complex Help System"
 echo ""
 
 # Test phpunit:help command itself
-run_test_step "phpunit:help command exists" \
-    "test_session_sync "Test command" --step \"phpunit:help DateTime\"" \
+    --step "phpunit:help DateTime" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:help command exists" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
     "DateTime" \
-    "check_contains"
+    --output-check contains
 
 # Test complex help for Assert commands
-run_test_step "phpunit:assert complex help" \
-    "test_session_sync "Test command" --step \"help phpunit:assert\"" \
+    --step "help phpunit:assert" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:assert complex help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
     "Système d'assertions PHPUnit" \
-    "check_contains"
+    --output-check contains
 
-run_test_step "phpunit:assert-equals complex help" \
-    "test_session_sync "Test command" --step \"help phpunit:assert-equals\"" \
+    --step "help phpunit:assert-equals" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:assert-equals complex help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
     "Vérification" \
-    "check_contains"
+    --output-check contains
 
-run_test_step "phpunit:assert-type complex help" \
-    "test_session_sync "Test command" --step \"help phpunit:assert-type\"" \
+    --step "help phpunit:assert-type" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:assert-type complex help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
     "Vérification du type" \
-    "check_contains"
+    --output-check contains
 
-run_test_step "phpunit:assert-instance complex help" \
-    "test_session_sync "Test command" --step \"help phpunit:assert-instance\"" \
+    --step "help phpunit:assert-instance" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:assert-instance complex help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
     "instance" \
-    "check_contains"
+    --output-check contains
 
-run_test_step "phpunit:assert-count complex help" \
-    "test_session_sync "Test command" --step \"help phpunit:assert-count\"" \
+    --step "help phpunit:assert-count" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:assert-count complex help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
     "éléments" \
-    "check_contains"
+    --output-check contains
 
-run_test_step "phpunit:assert-empty complex help" \
-    "test_session_sync "Test command" --step \"help phpunit:assert-empty\"" \
+    --step "help phpunit:assert-empty" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:assert-empty complex help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
     "vide" \
-    "check_contains"
+    --output-check contains
 
-run_test_step "phpunit:assert-not-empty complex help" \
-    "test_session_sync "Test command" --step \"help phpunit:assert-not-empty\"" \
+    --step "help phpunit:assert-not-empty" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:assert-not-empty complex help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
     "pas vide" \
-    "check_contains"
+    --output-check contains
 
-run_test_step "phpunit:assert-true complex help" \
-    "test_session_sync "Test command" --step \"help phpunit:assert-true\"" \
+    --step "help phpunit:assert-true" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:assert-true complex help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
     "true" \
-    "check_contains"
+    --output-check contains
 
-run_test_step "phpunit:assert-false complex help" \
-    "test_session_sync "Test command" --step \"help phpunit:assert-false\"" \
+    --step "help phpunit:assert-false" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:assert-false complex help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
     "false" \
-    "check_contains"
+    --output-check contains
 
-run_test_step "phpunit:assert-null complex help" \
-    "test_session_sync "Test command" --step \"help phpunit:assert-null\"" \
+    --step "help phpunit:assert-null" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:assert-null complex help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
     "null" \
-    "check_contains"
+    --output-check contains
 
-run_test_step "phpunit:assert-not-null complex help" \
-    "test_session_sync "Test command" --step \"help phpunit:assert-not-null\"" \
+    --step "help phpunit:assert-not-null" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:assert-not-null complex help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
     "pas null" \
-    "check_contains"
+    --output-check contains
 
 # Test complex help for Exception commands
-run_test_step "phpunit:expect-exception complex help" \
-    "test_session_sync "Test command" --step \"help phpunit:expect-exception\"" \
+    --step "help phpunit:expect-exception" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:expect-exception complex help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
     --expect "✅" --context phpunit
     "exception" \
-    "check_contains"
+    --output-check contains
 
-run_test_step "phpunit:expect-no-exception complex help" \
-    "test_session_sync "Test command" --step \"help phpunit:expect-no-exception\"" \
+    --step "help phpunit:expect-no-exception" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:expect-no-exception complex help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
     --expect "✅" --context phpunit
     "exception" \
-    "check_contains"
+    --output-check contains
 
-run_test_step "phpunit:assert-exception complex help" \
-    "test_session_sync "Test command" --step \"help phpunit:assert-exception\"" \
+    --step "help phpunit:assert-exception" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:assert-exception complex help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
     --expect "✅" --context phpunit
     "exception" \
-    "check_contains"
+    --output-check contains
 
-run_test_step "phpunit:assert-no-exception complex help" \
-    "test_session_sync "Test command" --step \"help phpunit:assert-no-exception\"" \
+    --step "help phpunit:assert-no-exception" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:assert-no-exception complex help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
     --expect "✅" --context phpunit
     "exception" \
-    "check_contains"
+    --output-check contains
 
 # Test complex help for Config commands
-run_test_step "phpunit:config complex help" \
-    "test_session_sync "Test command" --step \"help phpunit:config\"" \
+    --step "help phpunit:config" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:config complex help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
     "config" \
-    "check_contains"
+    --output-check contains
 
-run_test_step "phpunit:create complex help" \
-    "test_session_sync "Test command" --step \"help phpunit:create\"" \
+    --step "help phpunit:create" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:create complex help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
     "create" \
-    "check_contains"
+    --output-check contains
 
-run_test_step "phpunit:export complex help" \
-    "test_session_sync "Test command" --step \"help phpunit:export\"" \
+    --step "help phpunit:export" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:export complex help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
     "export" \
-    "check_contains"
+    --output-check contains
 
-run_test_step "phpunit:list complex help" \
-    "test_session_sync "Test command" --step \"help phpunit:list\"" \
+    --step "help phpunit:list" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:list complex help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
     "list" \
-    "check_contains"
+    --output-check contains
 
-run_test_step "phpunit:help complex help" \
-    "test_session_sync "Test command" --step \"help phpunit:help\"" \
+    --step "help phpunit:help" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:help complex help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
     "aide" \
-    "check_contains"
+    --output-check contains
 
 # Test complex help for Mock commands  
-run_test_step "phpunit:mock complex help" \
-    "test_session_sync "Test command" --step \"help phpunit:mock\"" \
+    --step "help phpunit:mock" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:mock complex help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
     "mock" \
-    "check_contains"
+    --output-check contains
 
-run_test_step "phpunit:partial-mock complex help" \
-    "test_session_sync "Test command" --step \"help phpunit:partial-mock\"" \
+    --step "help phpunit:partial-mock" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:partial-mock complex help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
     "partial" \
-    "check_contains"
+    --output-check contains
 
-run_test_step "phpunit:spy complex help" \
-    "test_session_sync "Test command" --step \"help phpunit:spy\"" \
+    --step "help phpunit:spy" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:spy complex help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
     "spy" \
-    "check_contains"
+    --output-check contains
 
 # Test complex help for Runner commands
-run_test_step "phpunit:run complex help" \
-    "test_session_sync "Test command" --step \"help phpunit:run\"" \
+    --step "help phpunit:run" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:run complex help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
     "run" \
-    "check_contains"
+    --output-check contains
 
-run_test_step "phpunit:debug complex help" \
-    "test_session_sync "Test command" --step \"help phpunit:debug\"" \
+    --step "help phpunit:debug" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:debug complex help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
     "debug" \
-    "check_contains"
+    --output-check contains
 
-run_test_step "phpunit:monitor complex help" \
-    "test_session_sync "Test command" --step \"help phpunit:monitor\"" \
+    --step "help phpunit:monitor" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:monitor complex help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
     "monitor" \
-    "check_contains"
+    --output-check contains
 
-run_test_step "phpunit:profile complex help" \
-    "test_session_sync "Test command" --step \"help phpunit:profile\"" \
+    --step "help phpunit:profile" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:profile complex help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
     "profile" \
-    "check_contains"
+    --output-check contains
 
-run_test_step "phpunit:trace complex help" \
-    "test_session_sync "Test command" --step \"help phpunit:trace\"" \
+    --step "help phpunit:trace" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:trace complex help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
     "trace" \
-    "check_contains"
+    --output-check contains
 
-run_test_step "phpunit:watch complex help" \
-    "test_session_sync "Test command" --step \"help phpunit:watch\"" \
+    --step "help phpunit:watch" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:watch complex help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
     "watch" \
-    "check_contains"
+    --output-check contains
 
 # Test complex help for Performance commands
-run_test_step "phpunit:benchmark complex help" \
-    "test_session_sync "Test command" --step \"help phpunit:benchmark\"" \
+    --step "help phpunit:benchmark" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:benchmark complex help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
     "benchmark" \
-    "check_contains"
+    --output-check contains
 
-run_test_step "phpunit:compare complex help" \
-    "test_session_sync "Test command" --step \"help phpunit:compare\"" \
+    --step "help phpunit:compare" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:compare complex help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
     "compare" \
-    "check_contains"
+    --output-check contains
 
-run_test_step "phpunit:compare-performance complex help" \
-    "test_session_sync "Test command" --step \"help phpunit:compare-performance\"" \
+    --step "help phpunit:compare-performance" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:compare-performance complex help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
     "performance" \
-    "check_contains"
+    --output-check contains
 
 # Test complex help for Snapshot commands
-run_test_step "phpunit:snapshot complex help" \
-    "test_session_sync "Test command" --step \"help phpunit:snapshot\"" \
+    --step "help phpunit:snapshot" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:snapshot complex help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
     "snapshot" \
-    "check_contains"
+    --output-check contains
 
-run_test_step "phpunit:save-snapshot complex help" \
-    "test_session_sync "Test command" --step \"help phpunit:save-snapshot\"" \
+    --step "help phpunit:save-snapshot" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:save-snapshot complex help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
     "save" \
-    "check_contains"
+    --output-check contains
 
 # Test complex help for Other commands
-run_test_step "phpunit:add complex help" \
-    "test_session_sync "Test command" --step \"help phpunit:add\"" \
+    --step "help phpunit:add" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:add complex help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
     "add" \
-    "check_contains"
+    --output-check contains
 
-run_test_step "phpunit:eval complex help" \
-    "test_session_sync "Test command" --step \"help phpunit:eval\"" \
+    --step "help phpunit:eval" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:eval complex help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
     "eval" \
-    "check_contains"
+    --output-check contains
 
-run_test_step "phpunit:expect complex help" \
-    "test_session_sync "Test command" --step \"help phpunit:expect\"" \
+    --step "help phpunit:expect" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:expect complex help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
     "expect" \
-    "check_contains"
+    --output-check contains
 
-run_test_step "phpunit:verify complex help" \
-    "test_session_sync "Test command" --step \"help phpunit:verify\"" \
+    --step "help phpunit:verify" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "phpunit:verify complex help" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
     "verify" \
-    "check_contains"
+    --output-check contains
 
 # Test that help system works with examples
-run_test_step "Help with examples section" \
-    "test_session_sync "Test command" --step \"help phpunit:assert-equals\"" \
+    --step "help phpunit:assert-equals" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "Help with examples section" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
     "examples" \
-    "check_contains"
+    --output-check contains
 
-run_test_step "Help with tips section" \
-    "test_session_sync "Test command" --step \"help phpunit:assert-type\"" \
+    --step "help phpunit:assert-type" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "Help with tips section" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
     "tips" \
-    "check_contains"
+    --output-check contains
 
-run_test_step "Help with related commands" \
-    "test_session_sync "Test command" --step \"help phpunit:assert\"" \
+    --step "help phpunit:assert" \ --context psysh --output-check contains --tag "phpunit_session"
+test_session_sync "Help with related commands" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
     "related" \
-    "check_contains"
+    --output-check contains
 
 test_summary

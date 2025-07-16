@@ -16,18 +16,33 @@ source "$(dirname "$0")/../../lib/func/test_session_sync_enhanced.sh"
 init_test "TEST 15: Gestion des exceptions"
 
 # Étape 1: Test exception simple avec try/catch
-test_monitor_expression "Exception simple" \
 'try { throw new Exception("Test"); } catch (Exception $e) { echo $e->getMessage(); }' \
+test_session_sync "Exception simple" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 'Test'
 
 # Étape 2: Test exception avec message personnalisé
-test_monitor_expression "Exception personnalisée" \
 'try { throw new Exception("Error 404"); } catch (Exception $e) { echo "Caught: " . $e->getMessage(); }' \
+test_session_sync "Exception personnalisée" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 'Caught: Error 404'
 
 # Étape 3: Test multiple exceptions
-test_monitor_multiline "Multiple exceptions" \
 'function testFunction($type) {
+test_session_sync "Multiple exceptions" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
     switch($type) {
         case "invalid":
             throw new InvalidArgumentException("Invalid argument");
@@ -46,8 +61,13 @@ try {
 'OK'
 
 # Étape 4: Test capture d'exception spécifique
-test_monitor_multiline "Exception spécifique" \
 'function divide($a, $b) {
+test_session_sync "Exception spécifique" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
     if ($b == 0) {
         throw new InvalidArgumentException("Division by zero");
     }
@@ -62,8 +82,13 @@ try {
 'Invalid: Division by zero'
 
 # Étape 5: Test exception dans une classe
-test_monitor_multiline "Exception dans classe" \
 'class Calculator {
+test_session_sync "Exception dans classe" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
     public function sqrt($number) {
         if ($number < 0) {
             throw new Exception("Negative number");
@@ -81,8 +106,13 @@ try {
 '4'
 
 # Étape 6: Test finally block
-test_monitor_multiline "Finally block" \
 '$executed = "";
+test_session_sync "Finally block" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 try {
     $executed .= "try ";
     throw new Exception("test");
@@ -95,8 +125,13 @@ echo $executed;' \
 'try catch finally'
 
 # Étape 7: Test exception personnalisée
-test_monitor_multiline "Exception personnalisée" \
 'class CustomException extends Exception {
+test_session_sync "Exception personnalisée" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
     public function __construct($message, $code = 0) {
         parent::__construct("Custom: " . $message, $code);
     }
@@ -110,8 +145,13 @@ try {
 'Custom: My error'
 
 # Étape 8: Test exception non capturée (devrait générer une erreur)
-test_monitor_error "Exception non capturée" \
 'throw new Exception("Uncaught exception");' \
+test_session_sync "Exception non capturée" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
 '(Uncaught exception|Fatal error|Error: Uncaught)'
 
 # Afficher le résumé
