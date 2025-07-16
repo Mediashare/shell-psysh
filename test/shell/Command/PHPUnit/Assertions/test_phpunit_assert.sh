@@ -1,26 +1,17 @@
 #!/bin/bash
 
-# Test phpunit:assert command
-# Tests all options and scenarios for assertions WITHOUT quotes (new syntax)
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source "$SCRIPT_DIR/../../lib/func/loader.sh"
 
-set -e
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
-
-
-echo "🧪 Testing phpunit:assert command..."
+# Initialiser l'environnement de test
+init_test_environment
+init_test "phpunit assert"
 
 # Test 1: Basic assertion without quotes
 echo "📝 Test 1: Basic assertion without quotes"
 
-    --step "phpunit:create TestService; phpunit:assert "42 === 42"" \ --context psysh --output-check contains --tag "phpunit_session"
 test_session_sync "Basic assertion without quotes" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+    --step "phpunit:create TestService; phpunit:assert "42 === 42"" \
     --expect "✅" \
     --context phpunit
 
@@ -28,13 +19,8 @@ test_session_sync "Basic assertion without quotes" \
 # Test 2: String comparison without quotes
 echo "📝 Test 2: String comparison without quotes"
 
-    --step "phpunit:create UserService; phpunit:assert "\"John Doe\" == \"John Doe\""" \ --context psysh --output-check contains --tag "phpunit_session"
 test_session_sync "String comparison without quotes" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+    --step "phpunit:create UserService; phpunit:assert "\"John Doe\" == \"John Doe\""" \
     --expect "✅" \
     --context phpunit
 
@@ -42,13 +28,8 @@ test_session_sync "String comparison without quotes" \
 # Test 3: Array count assertion
 echo "📝 Test 3: Array count assertion"
 
-    --step "phpunit:create DataService; phpunit:assert "count([1, 2, 3, 4, 5]) > 0"" \ --context psysh --output-check contains --tag "phpunit_session"
 test_session_sync "Array count assertion" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+    --step "phpunit:create DataService; phpunit:assert "count([1, 2, 3, 4, 5]) > 0"" \
     --expect "✅" \
     --context phpunit
 
@@ -56,13 +37,8 @@ test_session_sync "Array count assertion" \
 # Test 4: instanceof assertion
 echo "📝 Test 4: instanceof assertion"
 
-    --step "phpunit:create ObjectService; phpunit:assert "(new stdClass()) instanceof stdClass"" \ --context psysh --output-check contains --tag "phpunit_session"
 test_session_sync "instanceof assertion" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+    --step "phpunit:create ObjectService; phpunit:assert "(new stdClass()) instanceof stdClass"" \
     --expect "✅" \
     --context phpunit
 
@@ -70,13 +46,8 @@ test_session_sync "instanceof assertion" \
 # Test 5: Boolean assertion
 echo "📝 Test 5: Boolean assertion"
 
-    --step "phpunit:create BooleanService; phpunit:assert "true === true"" \ --context psysh --output-check contains --tag "phpunit_session"
 test_session_sync "Boolean assertion" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+    --step "phpunit:create BooleanService; phpunit:assert "true === true"" \
     --expect "✅" \
     --context phpunit
 
@@ -84,13 +55,8 @@ test_session_sync "Boolean assertion" \
 # Test 6: Null assertion
 echo "📝 Test 6: Null assertion"
 
-    --step "phpunit:create NullService; phpunit:assert "null === null"" \ --context psysh --output-check contains --tag "phpunit_session"
 test_session_sync "Null assertion" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+    --step "phpunit:create NullService; phpunit:assert "null === null"" \
     --expect "✅" \
     --context phpunit
 
@@ -98,13 +64,8 @@ test_session_sync "Null assertion" \
 # Test 7: Empty array assertion
 echo "📝 Test 7: Empty array assertion"
 
-    --step "phpunit:create EmptyService; phpunit:assert "empty([])"" \ --context psysh --output-check contains --tag "phpunit_session"
 test_session_sync "Empty array assertion" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+    --step "phpunit:create EmptyService; phpunit:assert "empty([])"" \
     --expect "✅" \
     --context phpunit
 
@@ -112,13 +73,8 @@ test_session_sync "Empty array assertion" \
 # Test 8: Complex expression assertion
 echo "📝 Test 8: Complex expression assertion"
 
-    --step "phpunit:create ComplexService; phpunit:assert "isset([\"debug\" => true][\"debug\"]) && [\"debug\" => true][\"debug\"] === true"" \ --context psysh --output-check contains --tag "phpunit_session"
 test_session_sync "Complex expression assertion" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+    --step "phpunit:create ComplexService; phpunit:assert "isset([\"debug\" => true][\"debug\"]) && [\"debug\" => true][\"debug\"] === true"" \
     --expect "✅" \
     --context phpunit
 
@@ -126,13 +82,8 @@ test_session_sync "Complex expression assertion" \
 # Test 9: Numeric comparison assertion
 echo "📝 Test 9: Numeric comparison assertion"
 
-    --step "phpunit:create NumericService; phpunit:assert "99.99 >= 50.0"" \ --context psysh --output-check contains --tag "phpunit_session"
 test_session_sync "Numeric comparison assertion" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+    --step "phpunit:create NumericService; phpunit:assert "99.99 >= 50.0"" \
     --expect "✅" \
     --context phpunit
 
@@ -147,13 +98,8 @@ fi
 
 # Test 11: Error handling - no assertion provided
 
-    --step "✅ Error handling works; ❌ Error handling failed; 📝 Test 11: Error handling - no assertion provided; phpunit:create TestService; phpunit:assert" \ --context psysh --output-check contains --tag "phpunit_session"
 test_session_sync "Error handling - no test created first" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+    --step "✅ Error handling works; ❌ Error handling failed; 📝 Test 11: Error handling - no assertion provided; phpunit:create TestService; phpunit:assert" \
     --expect "✅" \
     --context phpunit
 
@@ -161,18 +107,23 @@ test_session_sync "Error handling - no test created first" \
 # Test 12: Old syntax with quotes (compatibility)
 echo "📝 Test 12: Old syntax with quotes (compatibility)"
 
-    --step "phpunit:create LegacyService; phpunit:assert "42 === 42"" \ --context psysh --output-check contains --tag "phpunit_session"
 test_session_sync "Old syntax with quotes (compatibility)" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+    --step "phpunit:create LegacyService; phpunit:assert "42 === 42"" \
     --expect "✅" \
     --context phpunit
 
 
 # Clean up
 rm -f /tmp/psysh_assert_*.out
+# Afficher le résumé
+test_summary
 
-echo "✨ phpunit:assert tests completed"
+# Nettoyer l'environnement de test
+cleanup_test_environment
+
+# Sortir avec le code approprié
+if [[ $FAIL_COUNT -gt 0 ]]; then
+    exit 1
+else
+    exit 0
+fi

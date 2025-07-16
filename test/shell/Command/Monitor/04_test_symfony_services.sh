@@ -1,100 +1,53 @@
 #!/bin/bash
 
-# Test 04: Services Symfony
-# Test automatisé avec assertions efficaces
-
-# Get script directory and project root
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-PROJECT_ROOT="$( cd "$SCRIPT_DIR/../../.." && pwd )"
-
-# Source les bibliothèques de test
 source "$SCRIPT_DIR/../../lib/func/loader.sh"
-# Charger test_session_sync
-source "$(dirname "$0")/../../lib/func/test_session_sync_enhanced.sh"
 
-# Initialiser le test
-init_test "TEST 04: Services Symfony"
-
-# Initialiser le Symfony Kernel
-# container=$(/usr/bin/env symfony new kernel)
-# kernel=$container->get('kernel');
-# router=$container->get('router');
-
-# dispatcher=$container->get('event_dispatcher');
+# Initialiser l'environnement de test
+init_test_environment
+init_test "symfony services"
 
 # Étape 1: Test Container Symfony - Vérifier qu'il y a au moins 20 services
+test_monitor_echo "Container Symfony - Nombre de services (≥20)" \
 '$services = $container->getServiceIds(); $count = count($services); echo $count = 20 ? "OK: $count services" : "FAIL: only $count services"' \
-test_session_sync "Container Symfony - Nombre de services (≥20)" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
 'OK:.*services'
 
 # Étape 2: Test Kernel et environnement
+test_monitor_expression "Kernel environnement" \
 '$kernel->getEnvironment()' \
-test_session_sync "Kernel environnement" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
 'dev'
 
 # Étape 3: Test Router
+test_monitor_echo "Router - Collection de routes" \
 '$class = get_class($router->getRouteCollection()); echo $class' \
-test_session_sync "Router - Collection de routes" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
 'Symfony\\Component\\Routing\\RouteCollection'
 
 # Étape 4: Test EventDispatcher - Vérifier qu'il y a au moins quelques listeners
+test_monitor_echo "EventDispatcher - Nombre de listeners (≥ 3)" \
 '$count = count($dispatcher->getListeners()); echo $count >= 3 ? "OK: $count listeners" : "FAIL: only $count listeners"' \
-test_session_sync "EventDispatcher - Nombre de listeners (≥ 3)" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
 'OK:.*listeners'
 
 # Étape 5: Test d'erreur - service inexistant
+test_monitor_error "Service inexistant" \
 '$container->get("nonexistent.service")' \
-test_session_sync "Service inexistant" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
 'non-existent service'
 
 # Étape 6: Test d'erreur - paramètre inexistant
+test_monitor_error "Paramètre inexistant" \
 '$container->getParameter("nonexistent.parameter")' \
-test_session_sync "Paramètre inexistant" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
 'non-existent parameter'
 
 # Étape 7: Test sync - services persistants
+test_shell_responsiveness "Services persistants" \
 '$my_service = $container->get("kernel");' \
-test_session_sync "Services persistants" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
 'echo get_class($my_service)' \
 'App\\Kernel'
 
 # Afficher le résumé
 test_summary
+
+# Nettoyer l'environnement de test
+cleanup_test_environment
 
 # Sortir avec le code approprié
 if [[ $FAIL_COUNT -gt 0 ]]; then

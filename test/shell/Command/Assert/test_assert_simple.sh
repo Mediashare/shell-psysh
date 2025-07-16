@@ -1,125 +1,67 @@
 #!/bin/bash
 
-# Test script simple pour Assert commands - Version de base
-# Utilise uniquement les fonctions de base qui marchent bien
-
-# Obtenir le répertoire du script et charger l'exécuteur unifié
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source "$SCRIPT_DIR/../../lib/func/loader.sh"
-source "$SCRIPT_DIR/../../lib/func/test_session_sync_enhanced.sh"
 
 # Initialiser l'environnement de test
 init_test_environment
-init_test "Assert Commands - Tests de Base"
-
-# =============================================================================
-# TESTS DE BASE - Fonctions qui marchent
-# =============================================================================
+init_test "assert simple"
 
 # Test 1: Assert avec condition simple
-    --step "phpunit:assert '2 + 2 == 4'" \ --context psysh --output-check contains --tag "phpunit_session"
-test_session_sync "Assert condition simple" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
-    --expect "Assertion réussie" \
-    --context phpunit --output-check contains
+test_execute "Assert condition simple" \
+    "phpunit:assert '2 + 2 == 4'" \
+    "Assertion réussie" \
+    --context=phpunit --output-check=contains
 
 # Test 2: Assert booléen true
-    --step "phpunit:assert 'true'" \ --context psysh --output-check contains --tag "phpunit_session"
-test_session_sync "Assert booléen true" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
-    --expect "Assertion réussie" \
-    --context phpunit
+test_execute "Assert booléen true" \
+    "phpunit:assert 'true'" \
+    "Assertion réussie" \
+    --context=phpunit
 
 # Test 3: Assert booléen false (erreur attendue)
-    --step "phpunit:assert 'false'" \ --context psysh --output-check contains --tag "phpunit_session"
-test_session_sync "Assert booléen false" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
-    --expect "Assertion échouée" \
-    --context phpunit --output-check error
+test_execute "Assert booléen false" \
+    "phpunit:assert 'false'" \
+    "Assertion échouée" \
+    --context=phpunit --output-check=error
 
 # Test 4: Test phpunit simple
-    --step "phpunit:assert '3 * 3 == 9'" --context phpunit --expect "Assertion réussie" --output-check contains --tag "phpunit_session"
 test_session_sync "Test phpunit simple" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context phpunit \
-    --output-check contains \
-    --tag "phpunit_session"
+    --step "phpunit:assert '3 * 3 == 9'" --context phpunit --expect "Assertion réussie"
 
 # Test 5: Test avec retry
-   --step '$result = 42' --context 'psysh' --expect '42' \
 test_session_sync "Assert avec retry" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
-   --step "phpunit:assert '$result === 42'" --context 'phpunit' --expect "Assertion réussie" \ --output-check contains --tag "phpunit_session"
-   --retry 2 --timeout 10
+   --step '$result = 42' --context 'psysh' --expect '42' \
+   --step "phpunit:assert '$result === 42'" --context 'phpunit' --expect "Assertion réussie" \
+   --retry=2 --timeout=10
 
 # Test 6: Test avec debug
-    --step "phpunit:assert 'false'" \ --context psysh --output-check contains --tag "phpunit_session"
-test_session_sync "Assert avec debug" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
-    --expect "Assertion échouée" \
-    --context phpunit --debug --output-check error
+test_execute "Assert avec debug" \
+    "phpunit:assert 'false'" \
+    "Assertion échouée" \
+    --context=phpunit --debug --output-check=error
 
 # Test 7: Test avec timeout
-    --step "phpunit:assert 'true'" \ --context psysh --output-check contains --tag "phpunit_session"
-test_session_sync "Assert avec timeout" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
-    --expect "Assertion réussie" \
-    --context phpunit --timeout 5
+test_execute "Assert avec timeout" \
+    "phpunit:assert 'true'" \
+    "Assertion réussie" \
+    --context=phpunit --timeout=5
 
 # Test 8: Test monitor expression simple
-    --step "echo 'Hello World'" \ --context psysh --output-check contains --tag "default_session"
-test_session_sync "Test monitor expression simple" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context monitor \
-    --output-check contains \
-    --tag "monitor_session"
-    --expect "Hello World" \
-    --context monitor
+test_monitor_expression "Test monitor expression simple" \
+    "monitor 'echo \"Hello World\"'" \
+    "Hello World"
 
 # Test 9: Test d'erreur monitor
-    --step "invalid_php_function()" \ --context psysh --output-check contains --tag "default_session"
-test_session_sync "Test erreur monitor" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context monitor \
-    --output-check contains \
-    --tag "monitor_session"
-    --expect "Call to undefined function" \
-    --context monitor --output-check error
+test_monitor_error "Test erreur monitor" \
+    "invalid_php_function()" \
+    "Call to undefined function"
 
 # Test 10: Test shell responsiveness
-    --step "echo 'test'" \ --context psysh --output-check contains --tag "default_session"
-test_session_sync "Test shell responsiveness" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context shell \
-    --output-check contains \
-    --shell \
-    --tag "shell_session"
-    --expect "test" \
-    --context shell
+test_shell_responsiveness "Test shell responsiveness" \
+    "echo 'test'" \
+    "echo 'test'" \
+    "test"
 
 # Afficher le résumé
 test_summary

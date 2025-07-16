@@ -1,28 +1,15 @@
 #!/bin/bash
 
-# Test 18: Traits
-# Test automatisé avec assertions efficaces
-
-# Get script directory and project root
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-PROJECT_ROOT="$( cd "$SCRIPT_DIR/../../.." && pwd )"
-
-# Source les bibliothèques de test
 source "$SCRIPT_DIR/../../lib/func/loader.sh"
-# Charger test_session_sync
-source "$(dirname "$0")/../../lib/func/test_session_sync_enhanced.sh"
 
-# Initialiser le test
+# Initialiser l'environnement de test
+init_test_environment
 init_test "TEST 18: Traits"
 
 # Étape 1: Trait basique
-'trait Logger {
 test_session_sync "Trait Logger" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+'trait Logger {
     public function log($message) {
         return "[LOG] $message";
     }
@@ -35,13 +22,8 @@ echo $obj->log("Test message");' \
 '[LOG] Test message'
 
 # Étape 2: Trait avec conflit de méthodes
-'trait A {
 test_session_sync "Résolution de conflit" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+'trait A {
     public function hello() { return "Hello from A"; }
 }
 trait B {
@@ -57,13 +39,8 @@ echo $c->hello();' \
 'Hello from A'
 
 # Étape 3: Trait avec propriétés
-'trait Counter {
 test_session_sync "Trait avec propriétés" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+'trait Counter {
     protected $count = 0;
     public function increment() {
         $this->count++;
@@ -83,6 +60,9 @@ echo $counter->getCount();' \
 
 # Afficher le résumé
 test_summary
+
+# Nettoyer l'environnement de test
+cleanup_test_environment
 
 # Sortir avec le code approprié
 if [[ $FAIL_COUNT -gt 0 ]]; then

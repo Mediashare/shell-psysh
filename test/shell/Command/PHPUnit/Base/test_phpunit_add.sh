@@ -1,26 +1,17 @@
 #!/bin/bash
 
-# Test phpunit:add command
-# Tests all options and scenarios for adding test methods
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source "$SCRIPT_DIR/../../lib/func/loader.sh"
 
-set -e
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
-
-
-echo "🧪 Testing phpunit:add command..."
+# Initialiser l'environnement de test
+init_test_environment
+init_test "phpunit add"
 
 # Test 1: Add basic test method
 echo "📝 Test 1: Add basic test method"
 
-    --step "phpunit:create TestService; phpunit:add testBasicMethod" \ --context psysh --output-check contains --tag "phpunit_session"
 test_session_sync "Add basic test method" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+    --step "phpunit:create TestService; phpunit:add testBasicMethod" \
     --expect "✅" \
     --context phpunit
 
@@ -28,13 +19,8 @@ test_session_sync "Add basic test method" \
 # Test 2: Add multiple test methods
 echo "📝 Test 2: Add multiple test methods"
 
-    --step "phpunit:create UserService; phpunit:add testCreateUser; phpunit:add testUpdateUser; phpunit:add testDeleteUser" \ --context psysh --output-check contains --tag "phpunit_session"
 test_session_sync "Add multiple test methods" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+    --step "phpunit:create UserService; phpunit:add testCreateUser; phpunit:add testUpdateUser; phpunit:add testDeleteUser" \
     --expect "✅" \
     --context phpunit
 
@@ -42,13 +28,8 @@ test_session_sync "Add multiple test methods" \
 # Test 3: Add method with descriptive name
 echo "📝 Test 3: Add method with descriptive name"
 
-    --step "phpunit:create EmailService; phpunit:add testValidateEmailFormat; phpunit:add testSendEmailWithAttachment" \ --context psysh --output-check contains --tag "phpunit_session"
 test_session_sync "Add method with descriptive name" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+    --step "phpunit:create EmailService; phpunit:add testValidateEmailFormat; phpunit:add testSendEmailWithAttachment" \
     --expect "✅" \
     --context phpunit
 
@@ -63,13 +44,8 @@ fi
 
 # Test 5: Error handling - no method name
 
-    --step "✅ Error handling works; ❌ Error handling failed; 📝 Test 5: Error handling - no method name; phpunit:create TestService; phpunit:add" \ --context psysh --output-check contains --tag "phpunit_session"
 test_session_sync "Error handling - no test created first" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+    --step "✅ Error handling works; ❌ Error handling failed; 📝 Test 5: Error handling - no method name; phpunit:create TestService; phpunit:add" \
     --expect "✅" \
     --context phpunit
 
@@ -77,13 +53,8 @@ test_session_sync "Error handling - no test created first" \
 # Test 6: Add method with camelCase
 echo "📝 Test 6: Add method with camelCase"
 
-    --step "phpunit:create PaymentService; phpunit:add testProcessPaymentWithCreditCard; phpunit:add testCalculateDiscountForPremiumUser" \ --context psysh --output-check contains --tag "phpunit_session"
 test_session_sync "Add method with camelCase" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+    --step "phpunit:create PaymentService; phpunit:add testProcessPaymentWithCreditCard; phpunit:add testCalculateDiscountForPremiumUser" \
     --expect "✅" \
     --context phpunit
 
@@ -91,13 +62,8 @@ test_session_sync "Add method with camelCase" \
 # Test 7: Add method with underscore
 echo "📝 Test 7: Add method with underscore"
 
-    --step "phpunit:create DatabaseService; phpunit:add test_database_connection; phpunit:add test_query_execution" \ --context psysh --output-check contains --tag "phpunit_session"
 test_session_sync "Add method with underscore" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+    --step "phpunit:create DatabaseService; phpunit:add test_database_connection; phpunit:add test_query_execution" \
     --expect "✅" \
     --context phpunit
 
@@ -105,4 +71,15 @@ test_session_sync "Add method with underscore" \
 # Clean up
 rm -f /tmp/psysh_add_*.out
 
-echo "✨ phpunit:add tests completed"
+# Afficher le résumé
+test_summary
+
+# Nettoyer l'environnement de test
+cleanup_test_environment
+
+# Sortir avec le code approprié
+if [[ $FAIL_COUNT -gt 0 ]]; then
+    exit 1
+else
+    exit 0
+fi

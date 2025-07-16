@@ -1,128 +1,83 @@
 #!/bin/bash
 
-# Test script for Snapshot commands
-# Tests PHPUnitSnapshotCommand, PHPUnitSaveSnapshotCommand
-
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source "$SCRIPT_DIR/../../lib/func/loader.sh"
-# Charger test_session_sync
-source "$(dirname "$0")/../../lib/func/test_session_sync_enhanced.sh"
 
-# Vérifier que PROJECT_ROOT est défini
-if [[ -z "$PROJECT_ROOT" ]]; then
-    PROJECT_ROOT="$(cd "$(dirname "$0")" && cd ../.. && pwd)"
-    export PROJECT_ROOT
-fi
-
+# Initialiser l'environnement de test
+init_test_environment
 init_test "Snapshot Commands"
 echo ""
 
 # Test PHPUnitSnapshotCommand (phpunit:snapshot)
-    --step "phpunit:snapshot --help" \ --context psysh --output-check contains --tag "phpunit_session"
 test_session_sync "phpunit:snapshot help" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context phpunit \
-    --output-check contains \
-    --tag "phpunit_session"
-    --expect "Usage:" \
-    --output-check contains
+    "test_session_sync "Test command" --step \"phpunit:snapshot --help\"" \
+    "Usage:" \
+    "check_contains"
 
 # Test PHPUnitSaveSnapshotCommand (phpunit:save-snapshot)
-    --step "phpunit:save-snapshot --help" \ --context psysh --output-check contains --tag "phpunit_session"
 test_session_sync "phpunit:save-snapshot help" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context phpunit \
-    --output-check contains \
-    --tag "phpunit_session"
-    --expect "Usage:" \
-    --output-check contains
+    "test_session_sync "Test command" --step \"phpunit:save-snapshot --help\"" \
+    "Usage:" \
+    "check_contains"
 
 # Test snapshot creation with basic data
-    --step "phpunit:save-snapshot --name='test_snapshot' --data='test data'" \ --context psysh --output-check contains --tag "phpunit_session"
 test_session_sync "Create snapshot with basic data" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+    "test_session_sync "Test command" --step \"phpunit:save-snapshot --name='test_snapshot' --data='test data'\"" \
     "Snapshot saved" \
-    --output-check contains
+    "check_contains"
 
 # Test snapshot listing
-    --step "phpunit:snapshot --list" \ --context psysh --output-check contains --tag "phpunit_session"
 test_session_sync "List snapshots" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+    "test_session_sync "Test command" --step \"phpunit:snapshot --list\"" \
     "snapshots" \
-    --output-check contains
+    "check_contains"
 
 # Test snapshot comparison
-    --step "phpunit:snapshot --compare='snapshot1,snapshot2'" \ --context psysh --output-check contains --tag "phpunit_session"
 test_session_sync "Compare snapshots" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+    "test_session_sync "Test command" --step \"phpunit:snapshot --compare='snapshot1,snapshot2'\"" \
     "comparison" \
-    --output-check contains
+    "check_contains"
 
 # Test snapshot with array data
-    --step "phpunit:save-snapshot --name='array_snapshot' --data='[1,2,3,4,5]'" \ --context psysh --output-check contains --tag "phpunit_session"
 test_session_sync "Create snapshot with array data" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+    "test_session_sync "Test command" --step \"phpunit:save-snapshot --name='array_snapshot' --data='[1,2,3,4,5]'\"" \
     "Snapshot saved" \
-    --output-check contains
+    "check_contains"
 
 # Test snapshot with object data
-    --step "phpunit:save-snapshot --name='object_snapshot' --data='new stdClass()'" \ --context psysh --output-check contains --tag "phpunit_session"
 test_session_sync "Create snapshot with object data" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+    "test_session_sync "Test command" --step \"phpunit:save-snapshot --name='object_snapshot' --data='new stdClass()'\"" \
     "Snapshot saved" \
-    --output-check contains
+    "check_contains"
 
 # Test snapshot restore
-    --step "phpunit:snapshot --restore='test_snapshot'" \ --context psysh --output-check contains --tag "phpunit_session"
 test_session_sync "Restore snapshot" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+    "test_session_sync "Test command" --step \"phpunit:snapshot --restore='test_snapshot'\"" \
     "restored" \
-    --output-check contains
+    "check_contains"
 
 # Test snapshot deletion
-    --step "phpunit:snapshot --delete='test_snapshot'" \ --context psysh --output-check contains --tag "phpunit_session"
 test_session_sync "Delete snapshot" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+    "test_session_sync "Test command" --step \"phpunit:snapshot --delete='test_snapshot'\"" \
     "deleted" \
-    --output-check contains
+    "check_contains"
 
 # Test combined snapshot operations
-    --step "phpunit:save-snapshot --name='combined_test' --data='test'; phpunit:snapshot --list" \ --context psysh --output-check contains --tag "phpunit_session"
 test_session_sync "Combined snapshot operations" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+    "test_session_sync "Test command" --step \"phpunit:save-snapshot --name='combined_test' --data='test'; phpunit:snapshot --list\"" \
     "Snapshot saved" \
-    --output-check contains
+    "check_contains"
 
+
+# Afficher le résumé
 test_summary
+
+# Nettoyer l'environnement de test
+cleanup_test_environment
+
+# Sortir avec le code approprié
+if [[ $FAIL_COUNT -gt 0 ]]; then
+    exit 1
+else
+    exit 0
+fi

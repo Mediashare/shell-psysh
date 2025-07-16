@@ -1,28 +1,17 @@
 #!/bin/bash
 
-# Test 10: Code multi-lignes complexe
-# Test automatisé avec assertions efficaces
-
-# Get script directory and project root
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-PROJECT_ROOT="$( cd "$SCRIPT_DIR/../../.." && pwd )"
-
-# Source les bibliothèques de test
 source "$SCRIPT_DIR/../../lib/func/loader.sh"
-# Charger test_session_sync
-source "$(dirname "$0")/../../lib/func/test_session_sync_enhanced.sh"
 
-# Initialiser le test
+# Initialiser l'environnement de test
+init_test_environment
+init_test "multiline complex"
+
 init_test "TEST 10: Code multi-lignes complexe"
 
 # Étape 1: Test avec array d'utilisateurs et calcul de moyenne
-'$users = [
 test_session_sync "Calcul âge moyen des utilisateurs" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+'$users = [
     ["name" => "Alice", "age" => 25],
     ["name" => "Bob", "age" => 30],
     ["name" => "Charlie", "age" => 35]
@@ -36,13 +25,8 @@ echo "Age moyen: $averageAge";' \
 'Age moyen: 30'
 
 # Étape 2: Test de filtrage complexe
-'$numbers = range(1, 10);
 test_session_sync "Filtrage et transformation" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+'$numbers = range(1, 10);
 $evenSquares = array_map(function($x) {
     return $x * $x;
 }, array_filter($numbers, function($x) {
@@ -52,13 +36,8 @@ echo "Carrés pairs: " . implode(", ", $evenSquares);' \
 'Carrés pairs: 4, 16, 36, 64, 100'
 
 # Étape 3: Test closure avec capture de variable
-'$multiplier = 3;
 test_session_sync "Closure avec capture" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+'$multiplier = 3;
 $transform = function($arr) use ($multiplier) {
     return array_map(function($x) use ($multiplier) {
         return $x * $multiplier;
@@ -67,9 +46,11 @@ $transform = function($arr) use ($multiplier) {
 $result = $transform([1, 2, 3]);
 echo implode(", ", $result);' \
 '3, 6, 9'
-
 # Afficher le résumé
 test_summary
+
+# Nettoyer l'environnement de test
+cleanup_test_environment
 
 # Sortir avec le code approprié
 if [[ $FAIL_COUNT -gt 0 ]]; then

@@ -1,19 +1,10 @@
 #!/bin/bash
 
-# Test script for Runner commands
-# Tests PHPUnitRunCommand, PHPUnitDebugCommand, PHPUnitMonitorCommand, etc.
-
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source "$SCRIPT_DIR/../../lib/func/loader.sh"
-# Charger test_session_sync
-source "$(dirname "$0")/../../lib/func/test_session_sync_enhanced.sh"
 
-# Vérifier que PROJECT_ROOT est défini
-if [[ -z "$PROJECT_ROOT" ]]; then
-    PROJECT_ROOT="$(cd "$(dirname "$0")" && cd ../.. && pwd)"
-    export PROJECT_ROOT
-fi
-
+# Initialiser l'environnement de test
+init_test_environment
 init_test "Runner Commands"
 echo ""
 
@@ -57,6 +48,38 @@ test_session_sync "phpunit:monitor help" \
     --output-check contains \
     --tag "phpunit_session"
 
+# Test PHPUnitProfileCommand (phpunit:profile)
+test_session_sync "phpunit:profile help" \
+    --step "phpunit:profile --help" \
+    --expect "Usage:" \
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
+
+# Test PHPUnitTraceCommand (phpunit:trace)
+test_session_sync "phpunit:trace help" \
+    --step "phpunit:trace --help" \
+    --expect "Usage:" \
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
+
+# Test PHPUnitWatchCommand (phpunit:watch)
+test_session_sync "phpunit:watch help" \
+    --step "phpunit:watch --help" \
+    --expect "Usage:" \
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
+
+# Test PHPUnitExplainCommand (phpunit:explain)
+test_session_sync "phpunit:explain help" \
+    --step "phpunit:explain --help" \
+    --expect "Usage:" \
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
+
 # Test PsyshMonitorCommand (psysh:monitor)
 test_session_sync "psysh:monitor help" \
     --step "psysh:monitor --help" \
@@ -72,14 +95,35 @@ test_session_sync "tab command help" \
     --context psysh \
     --output-check contains \
     --psysh \
-    --tag "psysh_session"
+    --tag "default_session"
 
-# Test Combined operations with shared session
+# Test TestParamsCommand (test:params)
+test_session_sync "test:params help" \
+    --step "test:params --help" \
+    --expect "Usage:" \
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
+
+# Test combined runner operations
 test_session_sync "Combined runner operations" \
-    --step "phpunit:run --dry-run" \
+    --step "phpunit:run --dry-run; phpunit:debug --list-tests" \
     --expect "dry-run" \
     --context phpunit \
     --output-check contains \
-    --tag "combined_session"
+    --tag "phpunit_session"
 
+
+# Afficher le résumé
 test_summary
+
+# Nettoyer l'environnement de test
+cleanup_test_environment
+
+# Sortir avec le code approprié
+if [[ $FAIL_COUNT -gt 0 ]]; then
+    exit 1
+else
+    exit 0
+fi

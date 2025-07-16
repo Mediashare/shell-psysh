@@ -1,18 +1,10 @@
 #!/bin/bash
 
-# Test 05: Performance et boucles
-# Test automatisé avec assertions efficaces
-
-# Get script directory and project root
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-PROJECT_ROOT="$( cd "$SCRIPT_DIR/../../.." && pwd )"
-
-# Source les bibliothèques de test
 source "$SCRIPT_DIR/../../lib/func/loader.sh"
-# Charger test_session_sync
-source "$(dirname "$0")/../../lib/func/test_session_sync_enhanced.sh"
 
-# Initialiser le test
+# Initialiser l'environnement de test
+init_test_environment
 init_test "TEST 05: Performance et boucles"
 
 # Étape 1: Test somme avec boucle for (formule: n*(n+1)/2)
@@ -89,6 +81,9 @@ test_session_sync "Performance boucle 1-10000" \
 
 # Afficher le résumé
 test_summary
+
+# Nettoyer l'environnement de test
+cleanup_test_environment
 
 # Sortir avec le code approprié
 if [[ $FAIL_COUNT -gt 0 ]]; then

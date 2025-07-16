@@ -1,114 +1,53 @@
 #!/bin/bash
 
-# Test 24 Simple: Test rapide de synchronisation Shell <-> Monitor
-# Version simplifiée pour tests rapides
-
-# Get script directory and project root
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-PROJECT_ROOT="$( cd "$SCRIPT_DIR/../../.." && pwd )"
-
-# Source les bibliothèques de test
 source "$SCRIPT_DIR/../../lib/func/loader.sh"
-# Charger test_session_sync
-source "$(dirname "$0")/../../lib/func/test_session_sync_enhanced.sh"
 
-# Initialiser le test
+# Initialiser l'environnement de test
+init_test_environment
 init_test "TEST 24 Simple: Synchronisation rapide Shell <-> Monitor"
 
-# Test 1: Fonction simple (même tag pour partager le scope)
+# Test 1: Fonction fonctionne (pour confirmer que les fonctions SONT synchronisées)
 test_session_sync "Fonction Shell -> Monitor (devrait marcher)" \
-    --step 'function factorial($n) { if ($n <= 1) return 1; return $n * factorial($n - 1); }' \
-    --context psysh \
-    --psysh \
-    --tag "function_session" \
-    --expect "120" \
-    --output-check result \
-    --step 'echo factorial(5);' \
-    --context psysh \
-    --psysh \
-    --tag "function_session" \
-    --expect "120" \
-    --output-check exact
+'function factorial($n) { if ($n <= 1) return 1; return $n * factorial($n - 1); }' \
+'echo factorial(5);' \
+'' \
+'120' \
+'function'
 
-# Test 2: Variable (même tag)
-test_session_sync "Variable Shell -> Monitor" \
-    --step 'function factorial($n) { if ($n <= 1) return 1; return $n * factorial($n - 1); }' \
-    --context psysh \
-    --psysh \
-    --tag "variable_session" \
-    --expect "120" \
-    --output-check result \
-    --step '$result = factorial(5);' \
-    --context psysh \
-    --psysh \
-    --tag "variable_session" \
-    --expect "120" \
-    --output-check result \
-    --step 'echo "Résultat: $result";' \
-    --context psysh \
-    --psysh \
-    --tag "variable_session" \
-    --expect "Résultat: 120" \
-    --output-check exact
+# Test 2: Bug principal - Variable créée dans Monitor non accessible dans Shell
+test_session_sync "Bug principal: Variable Monitor -> Shell" \
+'function factorial($n) { if ($n <= 1) return 1; return $n * factorial($n - 1); }' \
+'$result = factorial(5);' \
+'echo "Résultat dans shell: $result";' \
+'Résultat dans shell: 120' \
+'variable'
 
-# Test 3: Classe (même tag)
+# Test 3: Classe Shell -> Monitor  
 test_session_sync "Classe Shell -> Monitor" \
-    --step 'class Calculator { public function add($a, $b) { return $a + $b; } }' \
-    --context psysh \
-    --psysh \
-    --tag "class_session" \
-    --expect "40" \
-    --output-check result \
-    --step '$calc = new Calculator(); $result = $calc->add(15, 25);' \
-    --context psysh \
-    --psysh \
-    --tag "class_session" \
-    --expect "40" \
-    --output-check result \
-    --step 'echo "Résultat: $result";' \
-    --context psysh \
-    --psysh \
-    --tag "class_session" \
-    --expect "Résultat: 40" \
-    --output-check exact
+'class Calculator { public function add($a, $b) { return $a + $b; } }' \
+'$calc = new Calculator(); $result = $calc->add(15, 25);' \
+'echo "Résultat: $result";' \
+'40' \
+'class'
 
-# Test 4: Variable globale (même tag)
+# Test 4: Variable globale
 test_session_sync "Variable globale" \
-    --step '$GLOBALS["config"] = ["version" => "1.0"];' \
-    --context psysh \
-    --psysh \
-    --tag "global_session" \
-    --expect "1.0" \
-    --output-check result \
-    --step '$version = $GLOBALS["config"]["version"];' \
-    --context psysh \
-    --psysh \
-    --tag "global_session" \
-    --expect "1.0" \
-    --output-check result \
-    --step 'echo "Version: $version";' \
-    --context psysh \
-    --psysh \
-    --tag "global_session" \
-    --expect "Version: 1.0" \
-    --output-check exact
+'$GLOBALS["config"] = ["version" => "1.0"];' \
+'$version = $GLOBALS["config"]["version"];' \
+'echo "Version: $version";' \
+'1.0' \
+'global'
 
 # Afficher le résumé
 test_summary
 
-echo ""
-print_colored "$BLUE" "=== RÉSUMÉ DES TESTS RAPIDES ==="
-print_colored "$GREEN" "✅ Test 1: Fonction Shell -> Monitor (même tag)"
-print_colored "$GREEN" "✅ Test 2: Variable Shell -> Monitor (même tag)"
-print_colored "$GREEN" "✅ Test 3: Classe Shell -> Monitor (même tag)"
-print_colored "$GREEN" "✅ Test 4: Variable globale (même tag)"
-echo ""
+# Nettoyer l'environnement de test
+cleanup_test_environment
 
 # Sortir avec le code approprié
 if [[ $FAIL_COUNT -gt 0 ]]; then
-    print_colored "$RED" "❌ $FAIL_COUNT tests ont échoué"
     exit 1
 else
-    print_colored "$GREEN" "✅ Tous les tests ont réussi"
     exit 0
 fi

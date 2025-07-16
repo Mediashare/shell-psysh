@@ -1,52 +1,32 @@
 #!/bin/bash
 
-# Test 20: Comparaison de performance
-# Test automatisé avec assertions efficaces
-
-# Get script directory and project root
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-PROJECT_ROOT="$( cd "$SCRIPT_DIR/../../.." && pwd )"
-
-# Source les bibliothèques de test
 source "$SCRIPT_DIR/../../lib/func/loader.sh"
-# Charger test_session_sync
-source "$(dirname "$0")/../../lib/func/test_session_sync_enhanced.sh"
 
-# Initialiser le test
+# Initialiser l'environnement de test
+init_test_environment
 init_test "TEST 20: Comparaison de performance"
 
 # Étape 1: Array vs ArrayObject
-'$arr = []; for($i = 0; $i < 1000; $i++) { $arr[] = $i; } count($arr)' \
 test_session_sync "Array standard" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+'$arr = []; for($i = 0; $i < 1000; $i++) { $arr[] = $i; } count($arr)' \
 '3'
 
 # Étape 2: Différentes méthodes de boucle
-'$data = range(1, 1000); $sum = 0; foreach($data as $val) { $sum += $val; } $sum' \
 test_session_sync "Boucle for vs foreach" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+'$data = range(1, 1000); $sum = 0; foreach($data as $val) { $sum += $val; } $sum' \
 '3'
 
 # Étape 3: String concatenation vs array join
-'$parts = []; for($i = 0; $i < 100; $i++) { $parts[] = "item$i"; } strlen(implode(",", $parts))' \
 test_session_sync "String concat vs implode" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+'$parts = []; for($i = 0; $i < 100; $i++) { $parts[] = "item$i"; } strlen(implode(",", $parts))' \
 '2'
 
 # Afficher le résumé
 test_summary
+
+# Nettoyer l'environnement de test
+cleanup_test_environment
 
 # Sortir avec le code approprié
 if [[ $FAIL_COUNT -gt 0 ]]; then

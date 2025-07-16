@@ -1,26 +1,17 @@
 #!/bin/bash
 
-# Test phpunit:mock command
-# Tests all options and scenarios for creating mocks
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source "$SCRIPT_DIR/../../lib/func/loader.sh"
 
-set -e
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
-
-
-echo "🧪 Testing phpunit:mock command..."
+# Initialiser l'environnement de test
+init_test_environment
+init_test "phpunit mock"
 
 # Test 1: Basic mock creation
 echo "📝 Test 1: Basic mock creation"
 
-    --step "phpunit:create TestService; phpunit:mock stdClass" \ --context psysh --output-check contains --tag "phpunit_session"
 test_session_sync "Basic mock creation" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+    --step "phpunit:create TestService; phpunit:mock stdClass" \
     --expect "✅" \
     --context phpunit
 
@@ -28,13 +19,8 @@ test_session_sync "Basic mock creation" \
 # Test 2: Mock with custom variable name
 echo "📝 Test 2: Mock with custom variable name"
 
-    --step "phpunit:create UserService; phpunit:mock stdClass customMock" \ --context psysh --output-check contains --tag "phpunit_session"
 test_session_sync "Mock with custom variable name" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+    --step "phpunit:create UserService; phpunit:mock stdClass customMock" \
     --expect "✅" \
     --context phpunit
 
@@ -42,13 +28,8 @@ test_session_sync "Mock with custom variable name" \
 # Test 3: Mock with specific methods
 echo "📝 Test 3: Mock with specific methods"
 
-    --step "phpunit:create EmailService; phpunit:mock stdClass emailMock --methods=send,validate" \ --context psysh --output-check contains --tag "phpunit_session"
 test_session_sync "Mock with specific methods" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+    --step "phpunit:create EmailService; phpunit:mock stdClass emailMock --methods=send,validate" \
     --expect "✅" \
     --context phpunit
 
@@ -56,13 +37,8 @@ test_session_sync "Mock with specific methods" \
 # Test 4: Partial mock creation
 echo "📝 Test 4: Partial mock creation"
 
-    --step "phpunit:create ServiceTest; phpunit:mock stdClass partialMock --partial" \ --context psysh --output-check contains --tag "phpunit_session"
 test_session_sync "Partial mock creation" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+    --step "phpunit:create ServiceTest; phpunit:mock stdClass partialMock --partial" \
     --expect "✅" \
     --context phpunit
 
@@ -70,13 +46,8 @@ test_session_sync "Partial mock creation" \
 # Test 5: Mock with namespace class
 echo "📝 Test 5: Mock with namespace class"
 
-    --step "phpunit:create NamespaceTest; class App\Service\EmailService { public function send() {} }; phpunit:mock App\Service\EmailService" \ --context psysh --output-check contains --tag "phpunit_session"
 test_session_sync "Mock with namespace class" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+    --step "phpunit:create NamespaceTest; class App\Service\EmailService { public function send() {} }; phpunit:mock App\Service\EmailService" \
     --expect "✅" \
     --context phpunit
 
@@ -91,13 +62,8 @@ fi
 
 # Test 7: Error handling - no class name
 
-    --step "✅ Error handling works; ❌ Error handling failed; 📝 Test 7: Error handling - no class name; phpunit:create TestService; phpunit:mock" \ --context psysh --output-check contains --tag "phpunit_session"
 test_session_sync "Error handling - no test created first" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+    --step "✅ Error handling works; ❌ Error handling failed; 📝 Test 7: Error handling - no class name; phpunit:create TestService; phpunit:mock" \
     --expect "✅" \
     --context phpunit
 
@@ -105,13 +71,8 @@ test_session_sync "Error handling - no test created first" \
 # Test 8: Mock interface
 echo "📝 Test 8: Mock interface"
 
-    --step "phpunit:create InterfaceTest; interface TestInterface { public function test(); }; phpunit:mock TestInterface" \ --context psysh --output-check contains --tag "phpunit_session"
 test_session_sync "Mock interface" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+    --step "phpunit:create InterfaceTest; interface TestInterface { public function test(); }; phpunit:mock TestInterface" \
     --expect "✅" \
     --context phpunit
 
@@ -119,13 +80,8 @@ test_session_sync "Mock interface" \
 # Test 9: Multiple mocks in same test
 echo "📝 Test 9: Multiple mocks in same test"
 
-    --step "phpunit:create MultiMockTest; phpunit:mock stdClass firstMock; phpunit:mock stdClass secondMock" \ --context psysh --output-check contains --tag "phpunit_session"
 test_session_sync "Multiple mocks in same test" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+    --step "phpunit:create MultiMockTest; phpunit:mock stdClass firstMock; phpunit:mock stdClass secondMock" \
     --expect "✅" \
     --context phpunit
 
@@ -133,13 +89,8 @@ test_session_sync "Multiple mocks in same test" \
 # Test 10: Mock with method list
 echo "📝 Test 10: Mock with method list"
 
-    --step "phpunit:create MethodListTest; phpunit:mock stdClass methodMock --methods=create,update,delete" \ --context psysh --output-check contains --tag "phpunit_session"
 test_session_sync "Mock with method list" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+    --step "phpunit:create MethodListTest; phpunit:mock stdClass methodMock --methods=create,update,delete" \
     --expect "✅" \
     --context phpunit
 
@@ -147,4 +98,16 @@ test_session_sync "Mock with method list" \
 # Clean up
 rm -f /tmp/psysh_mock_*.out
 
-echo "✨ phpunit:mock tests completed"
+
+# Afficher le résumé
+test_summary
+
+# Nettoyer l'environnement de test
+cleanup_test_environment
+
+# Sortir avec le code approprié
+if [[ $FAIL_COUNT -gt 0 ]]; then
+    exit 1
+else
+    exit 0
+fi

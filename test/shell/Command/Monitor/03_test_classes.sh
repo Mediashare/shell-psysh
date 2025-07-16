@@ -1,25 +1,15 @@
 #!/bin/bash
 
-# Test refactorisé avec test_session_sync_enhanced
-# Classes et objets
-
-# Obtenir le répertoire du script et charger les fonctions
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source "$SCRIPT_DIR/../../lib/func/loader.sh"
-source "$SCRIPT_DIR/../../lib/func/test_session_sync_enhanced.sh"
 
 # Initialiser l'environnement de test
 init_test_environment
-init_test "Classes et objets"
+init_test "classes"
 
 # Test des classes basiques
-    --context monitor \
 test_session_sync "Classes basiques" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+    --context monitor \
     --input-type multiline \
     --output-check contains \
     --timeout 30 \
@@ -31,13 +21,8 @@ test_session_sync "Classes basiques" \
     --expect 'Je suis Alice, 30 ans'
 
 # Test de l'héritage et des méthodes statiques
-    --context monitor \
 test_session_sync "Héritage et méthodes statiques" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+    --context monitor \
     --input-type multiline \
     --output-check contains \
     --timeout 30 \
@@ -47,13 +32,8 @@ test_session_sync "Héritage et méthodes statiques" \
     --expect '16,27'
 
 # Test des interfaces et fonctionnalités avancées
-    --context monitor \
 test_session_sync "Interfaces et fonctionnalités avancées" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+    --context monitor \
     --input-type multiline \
     --output-check contains \
     --timeout 30 \
@@ -65,13 +45,8 @@ test_session_sync "Interfaces et fonctionnalités avancées" \
     --expect '5'
 
 # Test des erreurs de classes
-    --context monitor \
 test_session_sync "Erreurs de classes" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+    --context monitor \
     --input-type multiline \
     --output-check error \
     --timeout 30 \
@@ -82,13 +57,8 @@ test_session_sync "Erreurs de classes" \
     --expect 'Call to undefined method'
 
 # Test de synchronisation - classes persistantes
-    --context monitor \
 test_session_sync "Synchronisation des classes" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "sync_session"
+    --context monitor \
     --input-type multiline \
     --output-check contains \
     --timeout 60 \
@@ -102,6 +72,9 @@ test_session_sync "Synchronisation des classes" \
 
 # Afficher le résumé
 test_summary
+
+# Nettoyer l'environnement de test
+cleanup_test_environment
 
 # Sortir avec le code approprié
 if [[ $FAIL_COUNT -gt 0 ]]; then

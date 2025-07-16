@@ -1,18 +1,10 @@
 #!/bin/bash
 
-# Test 27: Test de compatibilité avec les dernières améliorations
-# Vérifie le fonctionnement des nouveaux services
-
-# Get script directory and project root
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-PROJECT_ROOT="$( cd "$SCRIPT_DIR/../../.." && pwd )"
-
-# Source les bibliothèques de test
 source "$SCRIPT_DIR/../../lib/func/loader.sh"
-# Charger test_session_sync
-source "$(dirname "$0")/../../lib/func/test_session_sync_enhanced.sh"
 
-# Initialiser le test
+# Initialiser l'environnement de test
+init_test_environment
 init_test "TEST 27: Compatibilité avec les dernières améliorations"
 
 # === TESTS DE DÉTECTION DES FONCTIONNALITÉS ===
@@ -38,33 +30,19 @@ PASS_COUNT=$((PASS_COUNT + 1))
 print_colored "$BLUE" "=== TESTS DE BASE AVEC NOUVELLES FONCTIONNALITÉS ==="
 
 # Étape 3: Test simple avec monitor
-'echo 2 + 3' \
 test_session_sync "Test simple avec monitor" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context monitor \
-    --output-check contains \
-    --tag "monitor_session"
+'echo 2 + 3' \
 '5'
 
 # Étape 4: Test avec variables
-'$x = 10; $y = 20; $result = $x + $y;
 test_session_sync "Test avec variables" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+'$x = 10; $y = 20; $result = $x + $y;
 echo $result;' \
 '30'
 
 # Étape 5: Test avec fonction
-'function double($n) { return $n * 2; }
 test_session_sync "Test avec fonction" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+'function double($n) { return $n * 2; }
 echo double(21);' \
 '42'
 
@@ -73,24 +51,14 @@ echo double(21);' \
 print_colored "$BLUE" "=== TESTS DE SYNCHRONISATION AMÉLIORÉE ==="
 
 # Étape 6: Test de persistance des variables
-'$global_var = --expect "test_value";' \
 test_session_sync "Persistance des variables" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+'$global_var = "test_value";' \
 'echo $global_var;' \
 'test_value'
 
 # Étape 7: Test de persistance des fonctions
-'function test_func() { return "function_works"; }' \
 test_session_sync "Persistance des fonctions" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+'function test_func() { return "function_works"; }' \
 'echo test_func();' \
 'function_works'
 
@@ -99,33 +67,18 @@ test_session_sync "Persistance des fonctions" \
 print_colored "$BLUE" "=== TESTS DE GESTION D'ERREUR AMÉLIORÉE ==="
 
 # Étape 8: Test d'erreur de syntaxe
-'$x = ' \
 test_session_sync "Erreur de syntaxe" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+'$x = ' \
 '(PARSE ERROR|Parse error|syntax error|unexpected|Error:.*syntax error|Error:.*Unclosed|Syntax error|PHP Parse error|TypeError.*null given)'
 
 # Étape 9: Test d'erreur de variable non définie
-'echo $undefined_variable' \
 test_session_sync "Variable non définie" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+'echo $undefined_variable' \
 '(Undefined variable|Error:.*Undefined variable|Notice|Warning|TypeError)'
 
 # Étape 10: Test d'erreur de fonction non définie  
-'undefined_function()' \
 test_session_sync "Fonction non définie" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+'undefined_function()' \
 '(Call to undefined function|Error:.*undefined function|Fatal error|TypeError)'
 
 # === TESTS DE PERFORMANCE ET ROBUSTESSE ===
@@ -133,23 +86,13 @@ test_session_sync "Fonction non définie" \
 print_colored "$BLUE" "=== TESTS DE PERFORMANCE ET ROBUSTESSE ==="
 
 # Étape 11: Test de performance simple
-'echo array_sum(range(1, 1000))' \
 test_session_sync "Performance simple" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+'echo array_sum(range(1, 1000))' \
 '2'
 
 # Étape 12: Test avec boucle
-'$sum = 0;
 test_session_sync "Test avec boucle" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+'$sum = 0;
 for ($i = 1; $i <= 10; $i++) {
     $sum += $i;
 }
@@ -161,13 +104,8 @@ echo $sum;' \
 print_colored "$BLUE" "=== TESTS D'INTÉGRATION ==="
 
 # Étape 13: Test d'intégration avec classes
-'class TestClass {
 test_session_sync "Test avec classe" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+'class TestClass {
     public function getValue() {
         return "class_value";
     }
@@ -177,13 +115,8 @@ echo $obj->getValue();' \
 'class_value'
 
 # Étape 14: Test avec closure
-'$multiplier = 3;
 test_session_sync "Test avec closure" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+'$multiplier = 3;
 $closure = function($x) use ($multiplier) {
     return $x * $multiplier;
 };
@@ -195,23 +128,13 @@ echo $closure(7);' \
 print_colored "$BLUE" "=== TESTS DE COMPATIBILITÉ DESCENDANTE ==="
 
 # Étape 15: Test avec ancien format
-'echo strlen("hello")' \
 test_session_sync "Format ancien compatible" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+'echo strlen("hello")' \
 '5'
 
 # Étape 16: Test avec expressions complexes
-'echo json_encode(["key" => "value"])' \
 test_session_sync "Expression complexe" \
-    --step "" \ --context psysh --output-check contains --tag "default_session"
-    --context psysh \
-    --output-check contains \
-    --psysh \
-    --tag "default_session"
+'echo json_encode(["key" => "value"])' \
 '{"key":"value"}'
 
 # === RÉCAPITULATIF ===
@@ -233,15 +156,8 @@ print_colored "$GREEN" "  ✅ Compatibilité descendante maintenue"
 # Afficher le résumé
 test_summary
 
-# Message final
-echo ""
-if [[ $FAIL_COUNT -eq 0 ]]; then
-    print_colored "$GREEN" "🎉 Tous les tests de compatibilité sont PASSÉS !"
-    print_colored "$GREEN" "   Les dernières améliorations fonctionnent correctement."
-else
-    print_colored "$RED" "⚠️  Certains tests ont échoué."
-    print_colored "$YELLOW" "   Vérifiez la configuration et les services."
-fi
+# Nettoyer l'environnement de test
+cleanup_test_environment
 
 # Sortir avec le code approprié
 if [[ $FAIL_COUNT -gt 0 ]]; then
