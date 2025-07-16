@@ -1,0 +1,244 @@
+#!/bin/bash
+
+# Test script for Complex Help System
+# Tests that all phpunit:* commands have getComplexHelp() method and help system works
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/../../lib/func/loader.sh"
+# Charger test_session_sync
+source "$(dirname "$0")/../../lib/func/test_session_sync_enhanced.sh"
+
+# Vérifier que PROJECT_ROOT est défini
+if [[ -z "$PROJECT_ROOT" ]]; then
+    PROJECT_ROOT="$(cd "$(dirname "$0")" && cd ../.. && pwd)"
+    export PROJECT_ROOT
+fi
+
+init_test "Complex Help System"
+echo ""
+
+# Test phpunit:help command itself
+run_test_step "phpunit:help command exists" \
+    "test_session_sync "Test command" --step \"phpunit:help DateTime\"" \
+    "DateTime" \
+    "check_contains"
+
+# Test complex help for Assert commands
+run_test_step "phpunit:assert complex help" \
+    "test_session_sync "Test command" --step \"help phpunit:assert\"" \
+    "Système d'assertions PHPUnit" \
+    "check_contains"
+
+run_test_step "phpunit:assert-equals complex help" \
+    "test_session_sync "Test command" --step \"help phpunit:assert-equals\"" \
+    "Vérification" \
+    "check_contains"
+
+run_test_step "phpunit:assert-type complex help" \
+    "test_session_sync "Test command" --step \"help phpunit:assert-type\"" \
+    "Vérification du type" \
+    "check_contains"
+
+run_test_step "phpunit:assert-instance complex help" \
+    "test_session_sync "Test command" --step \"help phpunit:assert-instance\"" \
+    "instance" \
+    "check_contains"
+
+run_test_step "phpunit:assert-count complex help" \
+    "test_session_sync "Test command" --step \"help phpunit:assert-count\"" \
+    "éléments" \
+    "check_contains"
+
+run_test_step "phpunit:assert-empty complex help" \
+    "test_session_sync "Test command" --step \"help phpunit:assert-empty\"" \
+    "vide" \
+    "check_contains"
+
+run_test_step "phpunit:assert-not-empty complex help" \
+    "test_session_sync "Test command" --step \"help phpunit:assert-not-empty\"" \
+    "pas vide" \
+    "check_contains"
+
+run_test_step "phpunit:assert-true complex help" \
+    "test_session_sync "Test command" --step \"help phpunit:assert-true\"" \
+    "true" \
+    "check_contains"
+
+run_test_step "phpunit:assert-false complex help" \
+    "test_session_sync "Test command" --step \"help phpunit:assert-false\"" \
+    "false" \
+    "check_contains"
+
+run_test_step "phpunit:assert-null complex help" \
+    "test_session_sync "Test command" --step \"help phpunit:assert-null\"" \
+    "null" \
+    "check_contains"
+
+run_test_step "phpunit:assert-not-null complex help" \
+    "test_session_sync "Test command" --step \"help phpunit:assert-not-null\"" \
+    "pas null" \
+    "check_contains"
+
+# Test complex help for Exception commands
+run_test_step "phpunit:expect-exception complex help" \
+    "test_session_sync "Test command" --step \"help phpunit:expect-exception\"" \
+    --expect "✅" --context phpunit
+    "exception" \
+    "check_contains"
+
+run_test_step "phpunit:expect-no-exception complex help" \
+    "test_session_sync "Test command" --step \"help phpunit:expect-no-exception\"" \
+    --expect "✅" --context phpunit
+    "exception" \
+    "check_contains"
+
+run_test_step "phpunit:assert-exception complex help" \
+    "test_session_sync "Test command" --step \"help phpunit:assert-exception\"" \
+    --expect "✅" --context phpunit
+    "exception" \
+    "check_contains"
+
+run_test_step "phpunit:assert-no-exception complex help" \
+    "test_session_sync "Test command" --step \"help phpunit:assert-no-exception\"" \
+    --expect "✅" --context phpunit
+    "exception" \
+    "check_contains"
+
+# Test complex help for Config commands
+run_test_step "phpunit:config complex help" \
+    "test_session_sync "Test command" --step \"help phpunit:config\"" \
+    "config" \
+    "check_contains"
+
+run_test_step "phpunit:create complex help" \
+    "test_session_sync "Test command" --step \"help phpunit:create\"" \
+    "create" \
+    "check_contains"
+
+run_test_step "phpunit:export complex help" \
+    "test_session_sync "Test command" --step \"help phpunit:export\"" \
+    "export" \
+    "check_contains"
+
+run_test_step "phpunit:list complex help" \
+    "test_session_sync "Test command" --step \"help phpunit:list\"" \
+    "list" \
+    "check_contains"
+
+run_test_step "phpunit:help complex help" \
+    "test_session_sync "Test command" --step \"help phpunit:help\"" \
+    "aide" \
+    "check_contains"
+
+# Test complex help for Mock commands  
+run_test_step "phpunit:mock complex help" \
+    "test_session_sync "Test command" --step \"help phpunit:mock\"" \
+    "mock" \
+    "check_contains"
+
+run_test_step "phpunit:partial-mock complex help" \
+    "test_session_sync "Test command" --step \"help phpunit:partial-mock\"" \
+    "partial" \
+    "check_contains"
+
+run_test_step "phpunit:spy complex help" \
+    "test_session_sync "Test command" --step \"help phpunit:spy\"" \
+    "spy" \
+    "check_contains"
+
+# Test complex help for Runner commands
+run_test_step "phpunit:run complex help" \
+    "test_session_sync "Test command" --step \"help phpunit:run\"" \
+    "run" \
+    "check_contains"
+
+run_test_step "phpunit:debug complex help" \
+    "test_session_sync "Test command" --step \"help phpunit:debug\"" \
+    "debug" \
+    "check_contains"
+
+run_test_step "phpunit:monitor complex help" \
+    "test_session_sync "Test command" --step \"help phpunit:monitor\"" \
+    "monitor" \
+    "check_contains"
+
+run_test_step "phpunit:profile complex help" \
+    "test_session_sync "Test command" --step \"help phpunit:profile\"" \
+    "profile" \
+    "check_contains"
+
+run_test_step "phpunit:trace complex help" \
+    "test_session_sync "Test command" --step \"help phpunit:trace\"" \
+    "trace" \
+    "check_contains"
+
+run_test_step "phpunit:watch complex help" \
+    "test_session_sync "Test command" --step \"help phpunit:watch\"" \
+    "watch" \
+    "check_contains"
+
+# Test complex help for Performance commands
+run_test_step "phpunit:benchmark complex help" \
+    "test_session_sync "Test command" --step \"help phpunit:benchmark\"" \
+    "benchmark" \
+    "check_contains"
+
+run_test_step "phpunit:compare complex help" \
+    "test_session_sync "Test command" --step \"help phpunit:compare\"" \
+    "compare" \
+    "check_contains"
+
+run_test_step "phpunit:compare-performance complex help" \
+    "test_session_sync "Test command" --step \"help phpunit:compare-performance\"" \
+    "performance" \
+    "check_contains"
+
+# Test complex help for Snapshot commands
+run_test_step "phpunit:snapshot complex help" \
+    "test_session_sync "Test command" --step \"help phpunit:snapshot\"" \
+    "snapshot" \
+    "check_contains"
+
+run_test_step "phpunit:save-snapshot complex help" \
+    "test_session_sync "Test command" --step \"help phpunit:save-snapshot\"" \
+    "save" \
+    "check_contains"
+
+# Test complex help for Other commands
+run_test_step "phpunit:add complex help" \
+    "test_session_sync "Test command" --step \"help phpunit:add\"" \
+    "add" \
+    "check_contains"
+
+run_test_step "phpunit:eval complex help" \
+    "test_session_sync "Test command" --step \"help phpunit:eval\"" \
+    "eval" \
+    "check_contains"
+
+run_test_step "phpunit:expect complex help" \
+    "test_session_sync "Test command" --step \"help phpunit:expect\"" \
+    "expect" \
+    "check_contains"
+
+run_test_step "phpunit:verify complex help" \
+    "test_session_sync "Test command" --step \"help phpunit:verify\"" \
+    "verify" \
+    "check_contains"
+
+# Test that help system works with examples
+run_test_step "Help with examples section" \
+    "test_session_sync "Test command" --step \"help phpunit:assert-equals\"" \
+    "examples" \
+    "check_contains"
+
+run_test_step "Help with tips section" \
+    "test_session_sync "Test command" --step \"help phpunit:assert-type\"" \
+    "tips" \
+    "check_contains"
+
+run_test_step "Help with related commands" \
+    "test_session_sync "Test command" --step \"help phpunit:assert\"" \
+    "related" \
+    "check_contains"
+
+test_summary

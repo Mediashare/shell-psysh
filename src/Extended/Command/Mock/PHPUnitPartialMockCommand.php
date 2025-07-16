@@ -64,9 +64,9 @@ class PHPUnitPartialMockCommand extends \Psy\Extended\Command\BaseCommand
             $output->writeln($this->formatInfo("🔧 Méthodes mockées: " . implode(', ', $methods)));
             
             // Ajouter au test courant si disponible
-            $currentTest = $this->getCurrentTest();
+            $service = $this->phpunit();
+            $currentTest = $service->getCurrentTest()?->getTestClassName();
             if ($currentTest) {
-                $service = $this->phpunit();
                 $service->addCodeToTest($currentTest, $mockCode);
                 $output->writeln($this->formatInfo("📝 Mock ajouté au test {$currentTest}"));
             }

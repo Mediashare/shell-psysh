@@ -23,7 +23,7 @@ class HelpService
         echo "🧪 COMMANDES PHPUNIT DE BASE:\n";
         echo "  • phpunit:create <service> - Créer un nouveau test PHPUnit interactif\n";
         echo "  • phpunit:add <method>     - Ajouter une méthode de test\n";
-        echo "  • phpunit:code             - Entrer en mode code interactif\n";
+        echo "  • phpunit:code [--debug]   - Entrer en mode code interactif\n";
         echo "  • phpunit:run [test]       - Exécuter un test\n";
         echo "  • phpunit:export <test>    - Exporter un test vers un fichier\n";
         echo "  • phpunit:list             - Lister tous les tests actifs\n";
@@ -31,7 +31,7 @@ class HelpService
         
         // Commandes d'assertions
         echo "🎯 ASSERTIONS PHPUNIT:\n";
-        echo "  • phpunit:assert <expr> [-m message]     - Assertion simple avec message\n";
+        echo "  • phpunit:assert <expr> [-m message] [-d] - Assertion simple avec message\n";
         echo "  • phpunit:assert-type <type> <expr>      - Vérifier le type\n";
         echo "  • phpunit:assert-instance <class> <expr> - Vérifier l'instance\n";
         echo "  • phpunit:assert-count <num> <expr>      - Vérifier le nombre\n";
@@ -119,11 +119,11 @@ class HelpService
         echo "  Créer et développer un test:\n";
         echo "    >>> phpunit:create App\\Service\\InvoiceService\n";
         echo "    >>> phpunit:add testCalculate\n";
-        echo "    >>> phpunit:code\n";
+        echo "    >>> phpunit:code --debug\n";
         echo "    [Code Mode] >>> \$service = new InvoiceService();\n";
         echo "    [Code Mode] >>> \$result = \$service->calculate(100);\n";
         echo "    [Code Mode] >>> exit\n";
-        echo "    >>> phpunit:assert \$result == 120\n";
+        echo "    >>> phpunit:assert \$result == 120 --debug\n";
         echo "    >>> phpunit:run\n";
         echo "    >>> phpunit:export InvoiceServiceTest\n\n";
         

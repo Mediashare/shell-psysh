@@ -82,15 +82,16 @@ class PHPUnitAddCommand extends \Psy\Extended\Command\BaseCommand
         }
 
         $methodName = $input->getArgument('method');
-        $currentTest = $this->getCurrentTest();
+        
+        $service = $this->phpunit();
+        $currentTest = $service->getCurrentTest();
         
         if (!$currentTest) {
             $output->writeln($this->formatError('Aucun test actuel. Créez d\'abord un test avec phpunit:create'));
             return 1;
         }
         
-        $service = $this->phpunit();
-        $service->addMethodToTest($currentTest, $methodName);
+        $service->addMethodToTest($currentTest->getTestClassName(), $methodName);
         
         $output->writeln($this->formatSuccess("Méthode {$methodName} ajoutée"));
         

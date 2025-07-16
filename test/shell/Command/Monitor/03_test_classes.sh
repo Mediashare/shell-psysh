@@ -1,0 +1,111 @@
+#!/bin/bash
+
+# Test refactorisé avec test_session_sync_enhanced
+# Classes et objets
+
+# Obtenir le répertoire du script et charger les fonctions
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source "$SCRIPT_DIR/../../lib/func/loader.sh"
+source "$SCRIPT_DIR/../../lib/func/test_session_sync_enhanced.sh"
+
+# Initialiser l'environnement de test
+init_test_environment
+init_test "Classes et objets"
+
+# Test des classes basiques
+    --context monitor \
+test_session_sync "Classes basiques" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
+    --input-type multiline \
+    --output-check contains \
+    --timeout 30 \
+    --step 'class Calculator { public function add($a, $b) { return $a + $b; } } $calc = new Calculator(); echo $calc->add(5, 3);' \
+    --expect '8' \
+    --step 'class Counter { private $count = 0; public function increment() { return ++$this->count; } public function getCount() { return $this->count; } } $counter = new Counter(); $counter->increment(); $counter->increment(); echo $counter->getCount();' \
+    --expect '2' \
+    --step 'class Person { private $name; private $age; public function __construct($name, $age) { $this->name = $name; $this->age = $age; } public function introduce() { return "Je suis {$this->name}, {$this->age} ans"; } } $person = new Person("Alice", 30); echo $person->introduce();' \
+    --expect 'Je suis Alice, 30 ans'
+
+# Test de l'héritage et des méthodes statiques
+    --context monitor \
+test_session_sync "Héritage et méthodes statiques" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
+    --input-type multiline \
+    --output-check contains \
+    --timeout 30 \
+    --step 'class Animal { protected $name; public function __construct($name) { $this->name = $name; } public function speak() { return "Animal noise"; } } class Dog extends Animal { public function speak() { return "{$this->name} says Woof!"; } } $dog = new Dog("Buddy"); echo $dog->speak();' \
+    --expect 'Buddy says Woof!' \
+    --step 'class MathHelper { public static function square($n) { return $n * $n; } public static function cube($n) { return $n * $n * $n; } } echo MathHelper::square(4) . "," . MathHelper::cube(3);' \
+    --expect '16,27'
+
+# Test des interfaces et fonctionnalités avancées
+    --context monitor \
+test_session_sync "Interfaces et fonctionnalités avancées" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
+    --input-type multiline \
+    --output-check contains \
+    --timeout 30 \
+    --step 'interface Drawable { public function draw(); } class Circle implements Drawable { private $radius; public function __construct($radius) { $this->radius = $radius; } public function draw() { return "Circle with radius {$this->radius}"; } } $circle = new Circle(5); echo $circle->draw();' \
+    --expect 'Circle with radius 5' \
+    --step 'class Calculator { private $history = []; public function add($a, $b) { $result = $a + $b; $this->history[] = "$a+$b=$result"; return $result; } public function getHistoryCount() { return count($this->history); } } $calc = new Calculator(); $calc->add(2, 3); $calc->add(4, 5); echo $calc->getHistoryCount();' \
+    --expect '2' \
+    --step 'class SafeDivider { public function divide($a, $b) { if ($b == 0) { throw new Exception("Division by zero"); } return $a / $b; } } $divider = new SafeDivider(); try { echo $divider->divide(10, 2); } catch (Exception $e) { echo "Error: " . $e->getMessage(); }' \
+    --expect '5'
+
+# Test des erreurs de classes
+    --context monitor \
+test_session_sync "Erreurs de classes" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
+    --input-type multiline \
+    --output-check error \
+    --timeout 30 \
+    --retry 2 \
+    --step 'new NonExistentClass()' \
+    --expect 'Class.*not found' \
+    --step 'class Calculator { public function add($a, $b) { return $a + $b; } } $calc = new Calculator(); $calc->nonExistentMethod()' \
+    --expect 'Call to undefined method'
+
+# Test de synchronisation - classes persistantes
+    --context monitor \
+test_session_sync "Synchronisation des classes" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "sync_session"
+    --input-type multiline \
+    --output-check contains \
+    --timeout 60 \
+    --sync-test \
+    --step 'class GlobalClass { public $value = 123; }' \
+    --step '$obj = new GlobalClass(); echo $obj->value;' \
+    --expect '123' \
+    --step 'class BaseClass { protected function method() { return "parent"; } } class ChildClass extends BaseClass { protected function method() { return "child"; } public function test() { return $this->method(); } }' \
+    --step '$c = new ChildClass(); echo $c->test();' \
+    --expect 'child'
+
+# Afficher le résumé
+test_summary
+
+# Sortir avec le code approprié
+if [[ $FAIL_COUNT -gt 0 ]]; then
+    exit 1
+else
+    exit 0
+fi

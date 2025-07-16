@@ -1,0 +1,85 @@
+#!/bin/bash
+
+# Test script for Runner commands
+# Tests PHPUnitRunCommand, PHPUnitDebugCommand, PHPUnitMonitorCommand, etc.
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/../../lib/func/loader.sh"
+# Charger test_session_sync
+source "$(dirname "$0")/../../lib/func/test_session_sync_enhanced.sh"
+
+# Vérifier que PROJECT_ROOT est défini
+if [[ -z "$PROJECT_ROOT" ]]; then
+    PROJECT_ROOT="$(cd "$(dirname "$0")" && cd ../.. && pwd)"
+    export PROJECT_ROOT
+fi
+
+init_test "Runner Commands"
+echo ""
+
+# Test PHPUnitRunCommand (phpunit:run)
+test_session_sync "phpunit:run basic execution" \
+    --step "phpunit:run --help" \
+    --expect "Usage:" \
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
+
+# Test PHPUnitRunAllCommand (phpunit:run-all)
+test_session_sync "phpunit:run-all help" \
+    --step "phpunit:run-all --help" \
+    --expect "Usage:" \
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
+
+# Test PHPUnitRunProjectCommand (phpunit:run-project)
+test_session_sync "phpunit:run-project help" \
+    --step "phpunit:run-project --help" \
+    --expect "Usage:" \
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
+
+# Test PHPUnitDebugCommand (phpunit:debug)
+test_session_sync "phpunit:debug help" \
+    --step "phpunit:debug --help" \
+    --expect "Usage:" \
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
+
+# Test PHPUnitMonitorCommand (phpunit:monitor)
+test_session_sync "phpunit:monitor help" \
+    --step "phpunit:monitor --help" \
+    --expect "Usage:" \
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
+
+# Test PsyshMonitorCommand (psysh:monitor)
+test_session_sync "psysh:monitor help" \
+    --step "psysh:monitor --help" \
+    --expect "Usage:" \
+    --context monitor \
+    --output-check contains \
+    --tag "monitor_session"
+
+# Test TabCommand (tab)
+test_session_sync "tab command help" \
+    --step "tab --help" \
+    --expect "Usage:" \
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "psysh_session"
+
+# Test Combined operations with shared session
+test_session_sync "Combined runner operations" \
+    --step "phpunit:run --dry-run" \
+    --expect "dry-run" \
+    --context phpunit \
+    --output-check contains \
+    --tag "combined_session"
+
+test_summary

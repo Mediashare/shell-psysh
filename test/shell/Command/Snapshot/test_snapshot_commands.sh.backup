@@ -1,0 +1,80 @@
+#!/bin/bash
+
+# Test script for Snapshot commands
+# Tests PHPUnitSnapshotCommand, PHPUnitSaveSnapshotCommand
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/../../lib/func/loader.sh"
+# Charger test_session_sync
+source "$(dirname "$0")/../../lib/func/test_session_sync_enhanced.sh"
+
+# Vérifier que PROJECT_ROOT est défini
+if [[ -z "$PROJECT_ROOT" ]]; then
+    PROJECT_ROOT="$(cd "$(dirname "$0")" && cd ../.. && pwd)"
+    export PROJECT_ROOT
+fi
+
+init_test "Snapshot Commands"
+echo ""
+
+# Test PHPUnitSnapshotCommand (phpunit:snapshot)
+run_test_step "phpunit:snapshot help" \
+    "test_session_sync "Test command" --step \"phpunit:snapshot --help\"" \
+    "Usage:" \
+    "check_contains"
+
+# Test PHPUnitSaveSnapshotCommand (phpunit:save-snapshot)
+run_test_step "phpunit:save-snapshot help" \
+    "test_session_sync "Test command" --step \"phpunit:save-snapshot --help\"" \
+    "Usage:" \
+    "check_contains"
+
+# Test snapshot creation with basic data
+run_test_step "Create snapshot with basic data" \
+    "test_session_sync "Test command" --step \"phpunit:save-snapshot --name='test_snapshot' --data='test data'\"" \
+    "Snapshot saved" \
+    "check_contains"
+
+# Test snapshot listing
+run_test_step "List snapshots" \
+    "test_session_sync "Test command" --step \"phpunit:snapshot --list\"" \
+    "snapshots" \
+    "check_contains"
+
+# Test snapshot comparison
+run_test_step "Compare snapshots" \
+    "test_session_sync "Test command" --step \"phpunit:snapshot --compare='snapshot1,snapshot2'\"" \
+    "comparison" \
+    "check_contains"
+
+# Test snapshot with array data
+run_test_step "Create snapshot with array data" \
+    "test_session_sync "Test command" --step \"phpunit:save-snapshot --name='array_snapshot' --data='[1,2,3,4,5]'\"" \
+    "Snapshot saved" \
+    "check_contains"
+
+# Test snapshot with object data
+run_test_step "Create snapshot with object data" \
+    "test_session_sync "Test command" --step \"phpunit:save-snapshot --name='object_snapshot' --data='new stdClass()'\"" \
+    "Snapshot saved" \
+    "check_contains"
+
+# Test snapshot restore
+run_test_step "Restore snapshot" \
+    "test_session_sync "Test command" --step \"phpunit:snapshot --restore='test_snapshot'\"" \
+    "restored" \
+    "check_contains"
+
+# Test snapshot deletion
+run_test_step "Delete snapshot" \
+    "test_session_sync "Test command" --step \"phpunit:snapshot --delete='test_snapshot'\"" \
+    "deleted" \
+    "check_contains"
+
+# Test combined snapshot operations
+run_test_step "Combined snapshot operations" \
+    "test_session_sync "Test command" --step \"phpunit:save-snapshot --name='combined_test' --data='test'; phpunit:snapshot --list\"" \
+    "Snapshot saved" \
+    "check_contains"
+
+test_summary

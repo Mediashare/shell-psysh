@@ -1,0 +1,97 @@
+#!/bin/bash
+
+# Test script for Assert commands avec architecture modulaire
+# Démonstration des tests avec différents types d'input et de vérification
+
+# Obtenir le répertoire du script et charger l'exécuteur unifié
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source "$SCRIPT_DIR/../../lib/unified_test_executor.sh"
+
+# Initialiser l'environnement de test
+init_test_environment
+init_test "Assert Commands - Architecture modulaire"
+
+# =============================================================================
+# TESTS DE BASE - Utilisation des fonctions unifiées
+# =============================================================================
+
+# Test phpunit:assert avec condition valide
+test_phpunit "Assert avec condition vraie" \
+"assert '1 == 1' --message='This should pass'" \
+"✅"
+
+# Test phpunit:assert avec condition fausse (doit échouer)
+test_execute "Assert avec condition fausse" \
+"phpunit:assert '1 == 2' --message='This should fail'" \
+"❌" \
+--context=phpunit --output-check=error
+
+# Test phpunit:assert-equals avec chaînes égales
+test_phpunit "Assert-equals avec chaînes égales" \
+"assert-equals 'Hello' 'Hello' 'Strings should be equal'" \
+"✅"
+
+# Test phpunit:assert-equals avec valeurs différentes
+test_execute "Assert-equals avec valeurs différentes" \
+"phpunit:assert-equals 'Hello' 'World' 'Different strings'" \
+"❌" \
+--context=phpunit --output-check=error
+
+# Test phpunit:assert-type avec type correct
+test_phpunit "Assert-type avec type correct" \
+"assert-type 'string' '\"Hello World\"'" \
+"✅"
+
+# Test phpunit:assert-type avec type incorrect
+test_execute "Assert-type avec type incorrect" \
+"phpunit:assert-type 'integer' '\"Hello World\"'" \
+"❌" \
+--context=phpunit --output-check=error
+
+# Test simple avec vérification numérique
+test_phpunit "Assert numérique simple" \
+"assert 'is_numeric(5)'" \
+"✅"
+
+# =============================================================================
+# TESTS AVANCÉS - Démonstration des nouvelles capacités
+# =============================================================================
+
+# Test avec retry pour gérer les échecs temporaires
+test_execute "Assert avec retry" \
+"phpunit:assert 'true'" \
+"✅" \
+--context=phpunit --retry=2
+
+# Test avec vérification exacte
+test_execute "Assert avec vérification exacte" \
+"phpunit:assert '2 + 2 == 4'" \
+"✅ Assertion réussie" \
+--context=phpunit --output-check=exact
+
+# Test combiné - créer test puis exécuter assert
+test_combined_commands "Combinaison create + assert" \
+"phpunit:create AssertTest" \
+"phpunit:assert 'true'" \
+"✅"
+
+# Test avec input multilignes
+test_execute "Assert multilignes" \
+"phpunit:assert '1 == 1'
+phpunit:assert '2 == 2'" \
+"✅" \
+--context=phpunit --input-type=multiline
+
+# Test avec timeout spécifique
+test_execute "Assert avec timeout" \
+"phpunit:assert 'true'" \
+"✅" \
+--context=phpunit --timeout=3
+
+# Test avec debug activé
+test_execute "Assert avec debug" \
+"phpunit:assert 'false'" \
+"❌" \
+--context=phpunit --debug --output-check=error
+
+test_summary

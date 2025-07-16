@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# Test des fonctionnalités de création PHPUnit
+
+# Obtenir le répertoire du script et le project root
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT="$( cd "$SCRIPT_DIR/../../.." && pwd )"
+
+# Source les bibliothèques de test
+source "$SCRIPT_DIR/../../lib/func/loader.sh"
+# Charger test_session_sync
+source "$(dirname "$0")/../../lib/func/test_session_sync_enhanced.sh"
+
+# Initialiser le test
+init_test "PHPUnit: Command Create"
+
+# Test création basique
+test_session_sync "Créer un test simple" \
+    --step "phpunit:create 'App\\Service\\TestService'" \
+    --expect "✅" \
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
+
+# Test création avec une classe simple
+test_session_sync "Créer un test pour une classe utilitaire" \
+    --step "phpunit:create 'App\\Util\\Calculator'" \
+    --expect "✅" \
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
+
+# Test avec namespace simple
+test_session_sync "Créer un test avec namespace simple" \
+    --step "phpunit:create 'MyClass'" \
+    --expect "✅" \
+    --context phpunit \
+    --output-check contains \
+    --tag "phpunit_session"
+
+# Afficher le résumé des tests
+test_summary
+
+# Retourner un code de sortie en fonction des résultats des tests
+if [[ $FAIL_COUNT -gt 0 ]]; then
+    exit 1
+else
+    exit 0
+fi

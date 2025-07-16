@@ -1,0 +1,45 @@
+#!/bin/bash
+
+# Test 19: Iterators
+# Test automatisé avec assertions efficaces
+
+# Get script directory and project root
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT="$( cd "$SCRIPT_DIR/../../.." && pwd )"
+
+# Source les bibliothèques de test
+source "$SCRIPT_DIR/../../lib/psysh_utils.sh"
+
+# Initialiser le test
+init_test "TEST 19: Iterators"
+
+# Étape 1: Iterator simple
+test_monitor_expression "ArrayIterator" \
+'$arr = [1, 2, 3]; $it = new ArrayIterator($arr); $it->rewind(); echo $it->current()' \
+'1'
+
+# Étape 2: Foreach avec iterator
+test_monitor_multiline "Foreach avec iterator" \
+'$data = ["a" => 1, "b" => 2, "c" => 3];
+$it = new ArrayIterator($data);
+$result = [];
+foreach ($it as $key => $value) {
+    $result[] = "$key=$value";
+}
+echo implode(", ", $result);' \
+'a=1, b=2, c=3'
+
+# Étape 3: Iterator SPL
+test_monitor_expression "Iterator SPL" \
+'$it = new ArrayIterator(["file1.txt", "file2.txt"]); echo count(iterator_to_array($it))' \
+'2'
+
+# Afficher le résumé
+test_summary
+
+# Sortir avec le code approprié
+if [[ $FAIL_COUNT -gt 0 ]]; then
+    exit 1
+else
+    exit 0
+fi

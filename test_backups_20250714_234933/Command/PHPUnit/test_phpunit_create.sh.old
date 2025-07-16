@@ -1,0 +1,41 @@
+#!/bin/bash
+
+# Test des fonctionnalités de création PHPUnit
+
+# Obtenir le répertoire du script et le project root
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT="$( cd "$SCRIPT_DIR/../../.." && pwd )"
+
+# Source les bibliothèques de test
+source "$SCRIPT_DIR/../../lib/test_utils.sh"
+
+# Initialiser le test
+init_test "PHPUnit: Command Create"
+
+# Test création basique
+run_test_step "Créer un test simple" \
+    "$PROJECT_RO$PROJECT_ROOT/bin/psysh -c \"phpunit:create 'App\\\\Service\\\\TestService'\"" \
+    "✅" \
+    check_contains
+
+# Test création avec une classe simple
+run_test_step "Créer un test pour une classe utilitaire" \
+    "$PROJECT_RO$PROJECT_ROOT/bin/psysh -c \"phpunit:create 'App\\\\Util\\\\Calculator'\"" \
+    "✅" \
+    check_contains
+
+# Test avec namespace simple
+run_test_step "Créer un test avec namespace simple" \
+    "$PROJECT_RO$PROJECT_ROOT/bin/psysh -c \"phpunit:create 'MyClass'\"" \
+    "✅" \
+    check_contains
+
+# Afficher le résumé des tests
+test_summary
+
+# Retourner un code de sortie en fonction des résultats des tests
+if [[ $FAIL_COUNT -gt 0 ]]; then
+    exit 1
+else
+    exit 0
+fi

@@ -1,0 +1,41 @@
+#!/bin/bash
+
+# Test 21: Résultats des expressions simples (régression)
+# Test automatisé pour vérifier que les expressions simples retournent le bon résultat
+# Ce test vérifie la correction du bug où monitor retournait NULL au lieu du résultat
+
+# Get script directory and project root
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT="$( cd "$SCRIPT_DIR/../../.." && pwd )"
+
+# Source les bibliothèques de test
+source "$SCRIPT_DIR/../../lib/psysh_utils.sh"
+
+# Initialiser le test
+init_test "TEST 21: Résultats des expressions simples"
+
+# Étape 1: Expression simple
+test_monitor_expression "Expression simple" \
+'42' \
+'42'
+
+# Étape 2: Calcul
+test_monitor_expression "Calcul basique" \
+'5 + 3' \
+'8'
+
+# Étape 3: String
+test_monitor_expression "String" \
+'echo "Hello World"' \
+'Hello World'
+
+# Afficher le résumé
+test_summary
+
+# Sortir avec le code approprié
+if [[ $FAIL_COUNT -gt 0 ]]; then
+    exit 1
+else
+    exit 0
+fi
+

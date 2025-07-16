@@ -62,9 +62,9 @@ class PHPUnitCompareCommand extends \Psy\Extended\Command\BaseCommand
                 $output->writeln($this->formatDifferences($comparison['differences']));
                 
                 // Ajouter une assertion de comparaison au test courant si disponible
-                $currentTest = $this->getCurrentTest();
+                $service = $this->phpunit();
+                $currentTest = $service->getCurrentTest()?->getTestClassName();
                 if ($currentTest) {
-                    $service = $this->phpunit();
                     $assertionCode = $snapshotService->getSnapshot($name)['assertion'];
                     $service->addAssertionToTest($currentTest, $assertionCode . " // Snapshot comparison");
                     $output->writeln($this->formatInfo("Assertion de comparaison ajoutée au test {$currentTest}"));

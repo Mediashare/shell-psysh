@@ -11,10 +11,19 @@ class ShellSyncService
 {
     private ?Shell $mainShell = null;
     private array $lastKnownVariables = [];
+    private static $instance = null;
     
     public function __construct(?Shell $mainShell = null)
     {
         $this->mainShell = $mainShell;
+    }
+
+    public static function getInstance(): self
+    {
+        if (self::$instance === null) {
+            self::$instance = new self();
+        }
+        return self::$instance;
     }
     
     /**
@@ -103,11 +112,25 @@ class ShellSyncService
     public function getMainShellVariables(): array
     {
         if (!$this->mainShell) {
-            return $GLOBALS['psysh_main_shell_context'] ?? [];
+            // Fallback sur les globals et le fichier de persistance
+            $variables = $GLOBALS['psysh_main_shell_context'] ?? [];
+            $fileVars = $this->loadVariablesFromFile();
+            return array_merge($variables, $fileVars);
         }
         
         try {
-            return $this->mainShell->getScopeVariables();
+            // Récupérer les variables actuelles du shell
+            $shellVars = $this->mainShell->getScopeVariables();
+            
+            // Fusionner avec les variables globales et du fichier
+            $globalVars = $GLOBALS['psysh_main_shell_context'] ?? [];
+            $fileVars = $this->loadVariablesFromFile();
+            
+            // Mettre à jour le cache avec les variables les plus récentes
+            $allVars = array_merge($globalVars, $fileVars, $shellVars);
+            $this->lastKnownVariables = $allVars;
+            
+            return $allVars;
         } catch (\Exception $e) {
             return $GLOBALS['psysh_main_shell_context'] ?? [];
         }
@@ -174,5 +197,40 @@ class ShellSyncService
     public function loadExistingVariables(): array
     {
         return $this->loadVariablesFromFile();
+    }
+    
+    /**
+     * Hook pour synchroniser automatiquement les variables
+     * Cette méthode doit être appelée régulièrement
+     */
+    public function autoSync(): void
+    {
+        if (!$this->mainShell) {
+            return;
+        }
+        
+        try {
+            // Récupérer les variables actuelles du shell
+            $currentVariables = $this->mainShell->getScopeVariables();
+            
+            // Vérifier si des variables ont changé
+            $hasChanged = false;
+            foreach ($currentVariables as $name => $value) {
+                if (!isset($this->lastKnownVariables[$name]) || 
+                    $this->lastKnownVariables[$name] !== $value) {
+                    $hasChanged = true;
+                    break;
+                }
+            }
+            
+            // Si des changements sont détectés, synchroniser
+            if ($hasChanged || count($currentVariables) !== count($this->lastKnownVariables)) {
+                $this->lastKnownVariables = $currentVariables;
+                $GLOBALS['psysh_main_shell_context'] = $currentVariables;
+                $this->saveVariablesToFile($currentVariables);
+            }
+        } catch (\Exception $e) {
+            // Ignore les erreurs de synchronisation
+        }
     }
 }

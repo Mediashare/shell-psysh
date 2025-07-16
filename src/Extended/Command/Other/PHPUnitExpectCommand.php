@@ -52,9 +52,9 @@ class PHPUnitExpectCommand extends \Psy\Extended\Command\BaseCommand
             $output->writeln($this->formatInfo("📋 Expectation: {$expectation}"));
             
             // Ajouter au test courant si disponible
-            $currentTest = $this->getCurrentTest();
+            $service = $this->phpunit();
+            $currentTest = $service->getCurrentTest()?->getTestClassName();
             if ($currentTest) {
-                $service = $this->phpunit();
                 $service->addCodeToTest($currentTest, $expectation . ';');
                 $output->writeln($this->formatInfo("📝 Expectation ajoutée au test {$currentTest}"));
             }

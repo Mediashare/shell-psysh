@@ -121,7 +121,7 @@ class PHPUnitCreateCommand extends \Psy\Extended\Command\BaseCommand
             $test->setTargetClass($targetClass);
         }
         
-        $this->setCurrentTest($className);
+        $service->setCurrentTest($className);
         
         $output->writeln($this->formatSuccess("Test créé : {$className}Test (mode interactif)"));
         

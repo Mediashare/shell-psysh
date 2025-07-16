@@ -26,16 +26,41 @@ class AutoloadCommand extends BaseCommand
         $envService = new EnvironmentService();
         $context = $envService->loadProjectContext();
 
-        // Set scope variables in shell context
-        foreach ($context['variables'] as $name => $value) {
-            $this->setShellVariable($name, $value);
+        // Get the shell instance to set scope variables
+        $shell = $this->getApplication();
+        if ($shell instanceof \Psy\Shell) {
+            // Initialize the unified sync service
+            $unifiedSync = \Psy\Extended\Service\UnifiedSyncService::getInstance();
+            $unifiedSync->setMainShell($shell);
+            $GLOBALS['psysh_unified_sync_service'] = $unifiedSync;
+            
+            // Fallback: Also initialize the old shell sync service for backward compatibility
+            $syncService = \Psy\Extended\Service\ShellSyncService::getInstance();
+            $syncService->setMainShell($shell);
+            $GLOBALS['psysh_shell_sync_service'] = $syncService;
+            
+            // Get current scope variables
+            $currentVars = $shell->getScopeVariables();
+            
+            // Merge with new variables from context
+            $updatedVars = array_merge($currentVars, $context['variables']);
+            
+            // Set all variables in shell scope
+            $shell->setScopeVariables($updatedVars);
+            
+            // Initialize unified sync with all variables
+            $unifiedSync->setVariables($updatedVars);
+            
+            // Initialize and sync to all contexts
+            $syncService->initialize();
+            $syncService->captureMainShellVariables();
         }
 
         // Write welcome message
-        $this->writeInfo($output, $context['welcome_message']);
+        $output->writeln($this->formatInfo($context['welcome_message']));
 
         // Success message
-        $this->writeSuccess($output, 'Project autoloaded successfully');
+        $output->writeln($this->formatSuccess('Project autoloaded successfully'));
         return 0;
     }
 }

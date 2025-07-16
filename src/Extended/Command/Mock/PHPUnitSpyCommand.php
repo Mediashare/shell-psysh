@@ -51,9 +51,9 @@ class PHPUnitSpyCommand extends \Psy\Extended\Command\BaseCommand
                 $output->writeln($this->formatInfo("📊 Les appels de méthodes seront enregistrés"));
                 
                 // Ajouter au test courant si disponible
-                $currentTest = $this->getCurrentTest();
+                $service = $this->phpunit();
+                $currentTest = $service->getCurrentTest()?->getTestClassName();
                 if ($currentTest) {
-                    $service = $this->phpunit();
                     $spyCode = $mockService->generateSpyCode($mockVariable);
                     $service->addCodeToTest($currentTest, $spyCode);
                     $output->writeln($this->formatInfo("📝 Espionnage ajouté au test {$currentTest}"));

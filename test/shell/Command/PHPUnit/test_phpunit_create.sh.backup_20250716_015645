@@ -1,0 +1,58 @@
+#!/bin/bash
+
+# Test des fonctionnalités de création PHPUnit
+
+# Obtenir le répertoire du script et le project root
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT="$( cd "$SCRIPT_DIR/../../.." && pwd )"
+
+# Source les bibliothèques de test
+source "$SCRIPT_DIR/../../lib/func/loader.sh"
+# Charger test_session_sync
+source "$(dirname "$0")/../../lib/func/test_session_sync_enhanced.sh"
+
+# Initialiser le test
+init_test "PHPUnit: Command Create"
+
+# Test création basique
+    "$PROJECT_ROtest_session_sync "Test command" --step \"phpunit:create 'App\Service\TestService'\"" \
+test_session_sync "Créer un test simple" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
+    "✅" \
+    check_contains
+
+# Test création avec une classe simple
+    "$PROJECT_ROtest_session_sync "Test command" --step \"phpunit:create 'App\Util\Calculator'\"" \
+test_session_sync "Créer un test pour une classe utilitaire" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
+    "✅" \
+    check_contains
+
+# Test avec namespace simple
+    "$PROJECT_ROtest_session_sync "Test command" --step \"phpunit:create 'MyClass'\"" \
+test_session_sync "Créer un test avec namespace simple" \
+    --step "" \ --context psysh --output-check contains --tag "default_session"
+    --context psysh \
+    --output-check contains \
+    --psysh \
+    --tag "default_session"
+    "✅" \
+    check_contains
+
+# Afficher le résumé des tests
+test_summary
+
+# Retourner un code de sortie en fonction des résultats des tests
+if [[ $FAIL_COUNT -gt 0 ]]; then
+    exit 1
+else
+    exit 0
+fi

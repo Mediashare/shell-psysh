@@ -175,6 +175,15 @@ class InteractiveTest
     }
     
     /**
+     * Get code line count for current method
+     */
+    public function getCodeLineCount(): int
+    {
+        $data = $this->getCurrentMethodData();
+        return count($data['code'] ?? []);
+    }
+    
+    /**
      * Get statistics
      */
     public function getStats(): array

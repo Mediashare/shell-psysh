@@ -1,0 +1,67 @@
+#!/bin/bash
+
+# Test 08: Gestion des erreurs
+# Test automatisé avec assertions efficaces
+
+# Get script directory and project root
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT="$( cd "$SCRIPT_DIR/../../.." && pwd )"
+
+# Source les bibliothèques de test
+source "$SCRIPT_DIR/../../lib/func/loader.sh"
+# Charger test_session_sync
+source "$(dirname "$0")/../../lib/func/test_session_sync_enhanced.sh"
+
+# Initialiser le test
+init_test "TEST 08: Gestion des erreurs"
+
+# Étape 1: Test division par zéro
+test_monitor_error "Division par zéro" \
+'$x = 10 / 0;' \
+'(Division by zero|DivisionByZeroError|Error:.*[Dd]ivision)'
+
+# Étape 2: Variable non définie
+test_monitor_error "Variable non définie" \
+'echo $undefined_variable;' \
+'(Undefined variable|Error:.*Undefined variable|Notice|Warning|TypeError)'
+
+# Étape 3: Fonction inexistante
+test_monitor_error "Fonction inexistante" \
+'nonexistent_function();' \
+'(Call to undefined function|Error:.*undefined function|Fatal error|TypeError)'
+
+# Étape 4: Erreur de syntaxe PHP
+test_monitor_error "Erreur de syntaxe" \
+'if ($x) { echo "test";' \
+'(PARSE ERROR|Parse error|syntax error|unexpected|Error:.*syntax error|Error:.*Unclosed|Syntax error|PHP Parse error|TypeError.*null given)'
+
+# Étape 5: Accès à un index inexistant
+test_monitor_error "Index array inexistant" \
+'$arr = [1, 2, 3]; echo $arr[10];' \
+'(Undefined array key|Undefined offset|Notice|Warning|Error:.*Undefined)'
+
+# Étape 6: Test de propriété inexistante sur objet
+test_monitor_error "Propriété objet inexistante" \
+'$obj = new stdClass(); echo $obj->nonexistent;' \
+'(Undefined property|Notice|Warning|Error:.*Undefined property)'
+
+# Étape 7: Erreur de type (appel sur null)
+test_monitor_error "Appel méthode sur null" \
+'$null = null; $null->method();' \
+'(Call to a member function|Fatal error|Error:.*on null)'
+
+# Étape 8: Vérifier que les erreurs ne cassent pas le shell
+test_shell_responsiveness "Shell après erreur" \
+'$undefined_var = null;' \
+'echo 2 + 2' \
+'4'
+
+# Afficher le résumé
+test_summary
+
+# Sortir avec le code approprié
+if [[ $FAIL_COUNT -gt 0 ]]; then
+    exit 1
+else
+    exit 0
+fi

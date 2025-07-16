@@ -63,9 +63,9 @@ class PHPUnitVerifyCommand extends \Psy\Extended\Command\BaseCommand
             }
             
             // Ajouter au test courant si disponible
-            $currentTest = $this->getCurrentTest();
+            $service = $this->phpunit();
+            $currentTest = $service->getCurrentTest()?->getTestClassName();
             if ($currentTest) {
-                $service = $this->phpunit();
                 $verificationCode = $mockService->generateVerificationCode($parsedVerification);
                 $service->addCodeToTest($currentTest, $verificationCode);
                 $output->writeln($this->formatInfo("📝 Vérification ajoutée au test {$currentTest}"));

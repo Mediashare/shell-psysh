@@ -84,12 +84,12 @@ abstract class BaseAssertCommand extends \Psy\Extended\Command\BaseCommand
      */
     protected function addAssertionToCurrentTest($expected, $actual, string $message, bool $success): void
     {
-        $currentTest = $this->getCurrentTest();
+        $service = $this->phpunit();
+        $currentTest = $service->getCurrentTest()?->getTestClassName();
         if (!$currentTest) {
             return;
         }
 
-        $service = $this->phpunit();
         $assertionCode = $this->generateAssertionCode($expected, $actual, $message);
         
         $service->addCodeToTest($currentTest, $assertionCode);

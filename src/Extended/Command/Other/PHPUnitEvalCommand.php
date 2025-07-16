@@ -185,12 +185,12 @@ class PHPUnitEvalCommand extends \Psy\Extended\Command\BaseCommand
      */
     private function addAssertionToCurrentTest(string $expression, array $analysis): void
     {
-        $currentTest = $this->getCurrentTest();
+        $service = $this->phpunit();
+        $currentTest = $service->getCurrentTest()?->getTestClassName();
         if (!$currentTest) {
             return;
         }
         
-        $service = $this->phpunit();
         $phpunitCode = $this->generatePhpunitCode($analysis);
         
         if ($phpunitCode) {
