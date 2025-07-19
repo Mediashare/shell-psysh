@@ -14,11 +14,11 @@ init_test "assert commands"
 
 # Test 1: Assert avec condition simple
 test_session_sync "Assert condition simple" \
-    --step "phpunit:assert '2 + 2 == 4'" --context phpunit --expect "Assertion réussie" --output-check contains
+    --step "phpunit:assert '2 + 2 == 4'" --context psysh --expect "Assertion réussie" --output-check contains
 
 # Test 2: Assert avec condition fausse (test d'erreur)
 test_session_sync "Assert condition fausse" \
-    --step "phpunit:assert '1 == 2'" --context phpunit --expect "Assertion échouée" --output-check error
+    --step "phpunit:assert '1 == 2'" --context psysh --expect "Assertion échouée" --output-check error --timeout 5
 
 # Test 3: Assert avec booleens
 test_session_sync "Assert booleen true" \
@@ -31,28 +31,28 @@ test_session_sync "Assert booleen false" \
 # TESTS AVEC DONNEES SIMPLES  
 # =============================================================================
 
-# Test 4: Monitor avec expression simple (correction: 5 + 5 = 10)
-test_session_sync "Test monitor expression" \
-    --step "5 + 5" --context monitor --expect "10" --output-check result
+# Test 4: Psysh avec expression simple (correction: 5 + 5 = 10)
+test_session_sync "Test psysh expression" \
+    --step "5 + 5" --context psysh --expect "10" --output-check result --debug
 
-# Test 5: Monitor avec variable
-test_session_sync "Test monitor variable" \
-    --step 'echo "test"' --context monitor --expect "test"
+# Test 5: Psysh avec variable
+test_session_sync "Test psysh variable" \
+    --step 'echo "test"' --context psysh --expect "test"
 
-# Test 6: Monitor avec calcul
-test_session_sync "Test monitor calcul" \
-    --step '$result = 2 * 3; echo $result' --context monitor --expect "6" --output-check result
+# Test 6: Psysh avec calcul
+test_session_sync "Test psysh calcul" \
+    --step '$result = 2 * 3; echo $result' --context psysh --expect "6" --output-check result
 
-# Test 6b: Monitor avec calcul séparé en plusieurs étapes
-test_session_sync "Test monitor calcul multi-étapes" \
-    --step '$result = 2 * 3' --context monitor --expect "6" --output-check result \
-    --step 'echo $result' --context monitor --expect "6"
+# Test 6b: Psysh avec calcul séparé en plusieurs étapes
+test_session_sync "Test psysh calcul multi-étapes" \
+    --step '$result = 2 * 3' --context psysh --expect "6" --output-check result \
+    --step 'echo $result' --context psysh --expect "6"
 
 # Test 6c: Test avec variables partagées et sync-test
 test_session_sync "Test variables partagées avec sync" \
-    --step '$var1 = "Hello"' --context monitor --expect "Hello" --output-check result --sync-test \
-    --step '$var2 = "World"' --context monitor --expect "World" --output-check result --sync-test \
-    --step 'echo $var1 . " " . $var2' --context monitor --expect "Hello World" --sync-test
+    --step '$var1 = "Hello"' --context psysh --expect "Hello" --output-check result --sync-test \
+    --step '$var2 = "World"' --context psysh --expect "World" --output-check result --sync-test \
+    --step 'echo $var1 . " " . $var2' --context psysh --expect "Hello World" --sync-test
 
 # =============================================================================
 # TESTS AVANCES
@@ -72,11 +72,11 @@ test_session_sync "Assert avec debug" \
 
 # Test 9: Test avec fonction simple
 test_session_sync "Test avec fonction" \
-    --step '$string = "test"; strlen($string)' --context monitor --expect "4" --output-check result
+    --step '$string = "test"; strlen($string)' --context psysh --expect "4" --output-check result
 
 # Test 10: Test persistance de variable
 test_session_sync "Mixed context test" \
-    --step '$testVar = "Hello"' --context monitor --expect "Hello" --output-check result \
+    --step '$testVar = "Hello"' --context psysh --expect "Hello" --output-check result \
     --step 'echo $testVar' --context psysh --expect "Hello"
 
 # =============================================================================
@@ -91,7 +91,7 @@ test_session_sync "Test complexe avec héritage" \
 
 # Test 12: Test avec mock
 test_session_sync "Test avec mock" \
-    --step 'send_email("test@example.com")' --context monitor \
+    --step 'send_email("test@example.com")' --context psysh \
     --mock "send_email=echo 'Email simulé:'" \
     --expect "Email simulé:" \
     --output-check contains
@@ -106,7 +106,7 @@ test_session_sync "Gestion erreur variable indefinie" \
 
 # Test 14: Fonction inexistante
 test_session_sync "Test fonction inexistante" \
-    --step 'invalid_php_function()' --context monitor --expect "Call to undefined function" --output-check error
+    --step 'invalid_php_function()' --context psysh --expect "Call to undefined function" --output-check error
 
 # =============================================================================
 # TESTS DE RESPONSIVENESS ET SYNCHRONISATION
@@ -114,12 +114,12 @@ test_session_sync "Test fonction inexistante" \
 
 # Test 15: Test shell responsiveness avec session sync
 test_session_sync "Test shell responsiveness avec sync" \
-    --step '$setup = "active"' --context monitor --expect "active" --output-check result \
-    --step 'echo $setup' --context monitor --expect "active"
+    --step '$setup = "active"' --context psysh --expect "active" --output-check result \
+    --step 'echo $setup' --context psysh --expect "active"
 
 # Test 16: Test benchmark et performance
 test_session_sync "Test benchmark" --metrics --performance \
-    --step 'for($i=0; $i<1000; $i++){ $sum += $i; }' --context monitor --benchmark --memory-check \
+    --step 'for($i=0; $i<1000; $i++){ $sum += $i; }' --context psysh --benchmark --memory-check \
     --expect "499500" --output-check result --timeout 30
 
 # Test 17: Test avec conditions
@@ -158,11 +158,11 @@ test_session_sync "Test multiples expectations" \
 
 # Test 22: Test avec result output-check automatique
 test_session_sync "Test result output-check" \
-    --step '$x = 42; $y = 8; $x + $y' --context monitor --expect "50" --output-check result
+    --step '$x = 42; $y = 8; $x + $y' --context psysh --expect "50" --output-check result
 
 # Test 23: Test sync-test avec variables entre contextes
 test_session_sync "Test sync variables entre contextes" \
-    --step '$globalVar = "shared_value"' --context monitor --expect "shared_value" --output-check result --sync-test \
+    --step '$globalVar = "shared_value"' --context psysh --expect "shared_value" --output-check result --sync-test \
     --step 'echo $globalVar' --context psysh --expect "shared_value" --sync-test \
     --step 'phpunit:assert "$globalVar == \"shared_value\""' --context phpunit --expect "Assertion réussie" --sync-test
 
