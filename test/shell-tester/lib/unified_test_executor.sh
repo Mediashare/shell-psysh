@@ -1,0 +1,537 @@
+#!/bin/bash
+
+# =============================================================================
+# UNIFIED TEST EXECUTOR - Architecture modulaire pour tests PsySH Enhanced
+# =============================================================================
+# Cette bibliothèque fournit des méthodes unifiées pour exécuter tous types 
+# de tests shell psysh avec paramètres flexibles et techniques avancées
+
+# Variables globales pour le test
+TEST_COUNT=0
+PASS_COUNT=0
+FAIL_COUNT=0
+CURRENT_TEST_NAME=""
+TEST_OUTPUT_DIR=""
+DEBUG_MODE=${DEBUG_MODE:-0}
+declare -a TEST_RESULTS
+declare -a TEST_DETAILS
+
+# Variables pour la stack trace debug
+DEBUG_STACK_DEPTH=0
+declare -a DEBUG_FUNCTION_STACK
+declare -a DEBUG_FILE_STACK
+
+# Déterminer le répertoire du script
+if [[ -z "$SHELL_TEST_DIR" ]]; then
+    SHELL_TEST_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/.."
+fi
+
+# Source du module de timeout portable
+source "$SHELL_TEST_DIR/lib/timeout_handler.sh" 2>/dev/null || {
+    echo "Erreur: Impossible de charger le module timeout_handler.sh" >&2
+    exit 1
+}
+
+# =============================================================================
+# SYSTÈME DE TRACE DEBUG POUR STACK TRACE
+# =============================================================================
+
+# Fonction de trace debug pour suivre l'exécution des fonctions
+debug_trace() {
+    local action="$1"
+    local func_name="$2"
+    shift 2
+    local params="$*"
+    
+    if [[ "$DEBUG_MODE" -eq "1" ]]; then
+        local caller_file="${BASH_SOURCE[2]:-unknown}"
+        local caller_line="${BASH_LINENO[1]:-?}"
+        local current_file="${BASH_SOURCE[1]:-unknown}"
+        local current_line="${BASH_LINENO[0]:-?}"
+        
+        local indent=$(printf "%*s" $((DEBUG_STACK_DEPTH * 2)) "")
+        
+        if [[ "$action" == "enter" ]]; then
+            ((DEBUG_STACK_DEPTH++))
+            DEBUG_FUNCTION_STACK+=("$func_name")
+            DEBUG_FILE_STACK+=("$current_file")
+            echo -e "${CYAN}[TRACE]${indent}📥 ENTER: ${YELLOW}$func_name()${NC} | Fichier: $(basename "$current_file"):$current_line | Appelé depuis: $(basename "$caller_file"):$caller_line${NC}"
+            if [[ -n "$params" ]]; then
+                echo -e "${CYAN}[TRACE]${indent}   📋 Paramètres: $params${NC}"
+            fi
+        elif [[ "$action" == "exit" ]]; then
+            echo -e "${CYAN}[TRACE]${indent}📤 EXIT:  ${YELLOW}$func_name()${NC} | Fichier: $(basename "$current_file"):$current_line${NC}"
+            if [[ ${#DEBUG_FUNCTION_STACK[@]} -gt 0 ]]; then
+                unset 'DEBUG_FUNCTION_STACK[${#DEBUG_FUNCTION_STACK[@]}-1]'
+            fi
+            if [[ ${#DEBUG_FILE_STACK[@]} -gt 0 ]]; then
+                unset 'DEBUG_FILE_STACK[${#DEBUG_FILE_STACK[@]}-1]'
+            fi
+            ((DEBUG_STACK_DEPTH--))
+        elif [[ "$action" == "call" ]]; then
+            echo -e "${CYAN}[TRACE]${indent}⚡ CALL:  ${YELLOW}$func_name()${NC} | Ligne: $current_line | Params: $params${NC}"
+        fi
+    fi
+}
+
+# =============================================================================
+# FONCTIONS UTILITAIRES AVANCÉES
+# =============================================================================
+
+# Fonction pour parser les arguments de manière flexible
+# Usage: parse_test_args "$@"
+parse_test_args() {
+    # Variables pour les arguments (remplace les déclarations declare -g)
+    TEST_ARG_DESCRIPTION=""
+    TEST_ARG_COMMAND=""
+    TEST_ARG_EXPECTED=""
+    TEST_ARG_INPUT_TYPE=""
+    TEST_ARG_OUTPUT_CHECK=""
+    TEST_ARG_TIMEOUT=""
+    TEST_ARG_RETRY=""
+    TEST_ARG_ERROR_PATTERN=""
+    TEST_ARG_CONTEXT=""
+    TEST_ARG_SYNC_TEST=""
+    TEST_ARG_DEBUG=""
+
+    while [ $# -gt 0 ]; do
+        case $1 in
+            --description=*|--desc=*)
+                TEST_ARG_DESCRIPTION="${1#*=}"
+                ;;
+            --command=*|--cmd=*)
+                TEST_ARG_COMMAND="${1#*=}"
+                ;;
+            --expected=*|--expect=*)
+                TEST_ARG_EXPECTED="${1#*=}"
+                ;;
+            --input-type=*|--input=*)
+                TEST_ARG_INPUT_TYPE="${1#*=}"
+                ;;
+            --output-check=*|--check=*)
+                TEST_ARG_OUTPUT_CHECK="${1#*=}"
+                ;;
+            --timeout=*)
+                TEST_ARG_TIMEOUT="${1#*=}"
+                ;;
+            --retry=*)
+                TEST_ARG_RETRY="${1#*=}"
+                ;;
+            --error-pattern=*)
+                TEST_ARG_ERROR_PATTERN="${1#*=}"
+                ;;
+            --context=*)
+                TEST_ARG_CONTEXT="${1#*=}"
+                ;;
+            --sync-test)
+                TEST_ARG_SYNC_TEST="true"
+                ;;
+            --debug)
+                TEST_ARG_DEBUG="true"
+                ;;
+            *)
+                # Paramètres positionnels
+                if [ -z "$TEST_ARG_DESCRIPTION" ]; then
+                    TEST_ARG_DESCRIPTION="$1"
+                elif [ -z "$TEST_ARG_COMMAND" ]; then
+                    TEST_ARG_COMMAND="$1"
+                elif [ -z "$TEST_ARG_EXPECTED" ]; then
+                    TEST_ARG_EXPECTED="$1"
+                fi
+                ;;
+        esac
+        shift
+    done
+    
+    # Exporter les arguments parsés dans des variables globales
+    # (plus de tableau associatif, donc cette boucle n'est plus utile)
+    # for key in "${!args[@]}"; do
+    #     declare -g "TEST_ARG_${key^^}"="${args[$key]}"
+    # done
+    #
+    # Les variables sont déjà affectées directement ci-dessus
+    : # no-op (compatibilité)
+}
+
+# =============================================================================
+# MÉTHODE UNIFIÉE PRINCIPALE : test_execute
+# =============================================================================
+
+# Fonction principale unifiée pour exécuter tous types de tests
+# Usage: test_execute [OPTIONS] "description" "command" "expected"
+# 
+# OPTIONS:
+#   --context=TYPE         : monitor, phpunit, shell, mixed
+#   --input-type=TYPE      : pipe, file, echo, interactive, multiline
+#   --output-check=TYPE    : contains, exact, regex, json, error
+#   --sync-test           : active le test de synchronisation bidirectionnelle
+#   --timeout=SECONDS     : timeout pour l'exécution
+#   --retry=COUNT         : nombre de tentatives en cas d'échec
+#   --debug               : mode debug avec détails complets
+#
+test_execute() {
+    debug_trace enter "test_execute" "desc='$1'" "cmd='$2'" "expected='$3'"
+    
+    local description="$1"
+    local command="$2"
+    local expected="$3"
+    
+    command=$(printf '%s' "$command")  # Assurer que les retours à la ligne sont correctement gérés
+
+    # Parser les arguments additionnels
+    shift 3
+    parse_test_args "$@"
+    
+    # Configuration par défaut
+    local context="${TEST_ARG_CONTEXT:-monitor}"
+    local input_type="${TEST_ARG_INPUT_TYPE:-echo}"
+    local output_check="${TEST_ARG_OUTPUT_CHECK:-contains}"
+    local timeout="${TEST_ARG_TIMEOUT:-30}"
+    local retry_count="${TEST_ARG_RETRY:-1}"
+    local sync_test="${TEST_ARG_SYNC_TEST:-false}"
+    local debug="${TEST_ARG_DEBUG:-false}"
+    
+    ((TEST_COUNT++))
+    
+    echo -e "${BLUE}>>> Étape $TEST_COUNT: $description${NC}"
+    
+    if [[ "$debug" == "true" || "$DEBUG_MODE" == "1" ]]; then
+        echo -e "${CYAN}[DEBUG] Context: $context | Input: $input_type | Check: $output_check${NC}"
+        echo -e "${CYAN}[DEBUG] Command: $command${NC}"
+        echo -e "${CYAN}[DEBUG] Expected: $expected${NC}"
+    fi
+    
+    local result=""
+    local success=false
+    local attempt=1
+    
+    while [[ $attempt -le $retry_count ]]; do
+        if [[ $retry_count -gt 1 ]]; then
+            echo -e "${YELLOW}[Tentative $attempt/$retry_count]${NC}"
+        fi
+        
+        # Exécuter selon le contexte et le type d'input
+        case "$context" in
+            "monitor")
+                result=$(execute_monitor_test "$command" "$input_type" "$timeout")
+                ;;
+            "phpunit")
+                result=$(execute_phpunit_test "$command" "$input_type" "$timeout")
+                ;;
+            "shell")
+                result=$(execute_shell_test "$command" "$input_type" "$timeout")
+                ;;
+            "psysh")
+                result=$(execute_psysh_test "$command" "$input_type" "$timeout")
+                ;;
+            "mixed")
+                result=$(execute_mixed_test "$command" "$input_type" "$timeout")
+                ;;
+            *)
+                echo -e "${RED}❌ ERREUR: Contexte inconnu '$context'${NC}"
+                return 1
+                ;;
+        esac
+        
+        # Vérifier le résultat selon le type de check
+        if check_result "$result" "$expected" "$output_check"; then
+            success=true
+            break
+        fi
+        
+        ((attempt++))
+        if [[ $attempt -le $retry_count ]]; then
+            echo -e "${YELLOW}⏳ Nouvelle tentative dans 1 seconde...${NC}"
+            sleep 1
+        fi
+    done
+    
+    # Traitement du résultat
+    if [[ "$success" == "true" ]]; then
+        ((PASS_COUNT++))
+        echo -e "${GREEN}✅ PASS: $description${NC}"
+        TEST_RESULTS["$TEST_COUNT"]="PASS"
+        
+        # Test de synchronisation si demandé
+        if [[ "$sync_test" == "true" ]]; then
+            test_synchronization "$command" "$expected"
+        fi
+    else
+        ((FAIL_COUNT++))
+        echo -e "${RED}❌ FAIL: $description${NC}"
+        echo -e "${RED}Résultat attendu: $expected${NC}"
+        echo -e "${RED}Résultat obtenu: $result${NC}"
+        TEST_RESULTS["$TEST_COUNT"]="FAIL"
+        TEST_DETAILS["$TEST_COUNT"]="Expected: $expected | Got: $result"
+    fi
+    
+    # Cleanup des variables temporaires
+    unset_test_args
+    
+    debug_trace exit "test_execute"
+    return $([[ "$success" == "true" ]] && echo 0 || echo 1)
+}
+
+# =============================================================================
+# FONCTIONS D'EXÉCUTION SPÉCIALISÉES
+# =============================================================================
+
+# Exécution dans le contexte psysh
+execute_psysh_test() {
+    local command="$1"
+    local input_type="$2"
+    local timeout="$3"
+    
+    case "$input_type" in
+        "multiline")
+            echo "$command" | run_with_timeout "$timeout" $PSYSH_CMD 2>&1
+            ;;
+        "pipe")
+            echo "$command" | run_with_timeout "$timeout" $PSYSH_CMD 2>&1
+            ;;
+        "file")
+            local temp_file=$(mktemp)
+            echo "$command" > "$temp_file"
+            run_with_timeout "$timeout" $PSYSH_CMD < "$temp_file" 2>&1
+            rm -f "$temp_file"
+            ;;
+        "interactive")
+            # Simulation d'input interactif
+            echo -e "$command\nexit" | run_with_timeout "$timeout" $PSYSH_CMD 2>&1
+            ;;
+        *)
+            echo "$command" | run_with_timeout "$timeout" $PSYSH_CMD 2>&1
+            ;;
+    esac
+}
+
+# Exécution dans le contexte monitor
+execute_monitor_test() {
+    debug_trace enter "execute_monitor_test" "cmd='$1'" "input='$2'" "timeout=$3"
+    
+    local command="$1"
+    local input_type="$2"
+    local timeout="$3"
+    
+    case "$input_type" in
+        "multiline")
+            echo "monitor $command" | run_with_timeout "$timeout" $PSYSH_CMD 2>&1
+            ;;
+        "pipe")
+            echo "monitor $command" | run_with_timeout "$timeout" $PSYSH_CMD 2>&1
+            ;;
+        "file")
+            local temp_file=$(mktemp)
+            echo "monitor $command" > "$temp_file"
+            run_with_timeout "$timeout" $PSYSH_CMD < "$temp_file" 2>&1
+            rm -f "$temp_file"
+            ;;
+        "interactive")
+            # Simulation d'input interactif
+            echo -e "monitor\n$command\nexit" | run_with_timeout "$timeout" $PSYSH_CMD 2>&1
+            ;;
+        *)
+            debug_trace call "run_with_timeout" "timeout=$timeout" "cmd=monitor $command"
+            echo -e "monitor $command" | run_with_timeout "$timeout" $PSYSH_CMD 2>&1
+            ;;
+    esac
+    
+    debug_trace exit "execute_monitor_test"
+}
+
+# Exécution dans le contexte phpunit
+execute_phpunit_test() {
+    local command="$1"
+    local input_type="$2"
+    local timeout="$3"
+    
+    # Préfixer avec le contexte phpunit si nécessaire
+    if [[ "$command" != phpunit:* ]]; then
+        command="phpunit:$command"
+    fi
+    
+    execute_psysh_test "$command" "$input_type" "$timeout"
+}
+
+# Exécution dans le contexte shell
+execute_shell_test() {
+    local command="$1"
+    local input_type="$2"
+    local timeout="$3"
+    
+    case "$input_type" in
+        "file")
+            local temp_file=$(mktemp)
+            echo "$command" > "$temp_file"
+            run_with_timeout "$timeout" bash "$temp_file" 2>&1
+            rm -f "$temp_file"
+            ;;
+        *)
+            run_with_timeout "$timeout" bash -c "$command" 2>&1
+            ;;
+    esac
+}
+
+# Exécution mixte (combinaison de commandes)
+execute_mixed_test() {
+    local command="$1"
+    local input_type="$2"
+    local timeout="$3"
+    
+    # Séparer les commandes par des délimiteurs
+    local IFS=$'\n'
+    local commands=($(echo "$command" | sed 's/&&/\n/g; s/||/\n/g; s/;/\n/g'))
+    
+    local combined_output=""
+    for cmd in "${commands[@]}"; do
+        cmd=$(echo "$cmd" | xargs)  # trim whitespace
+        if [[ "$cmd" =~ ^(monitor|phpunit:) ]]; then
+            combined_output+=$(execute_psysh_test "$cmd" "$input_type" "$timeout")
+        else
+            combined_output+=$(execute_shell_test "$cmd" "$input_type" "$timeout")
+        fi
+        combined_output+=$'\n'
+    done
+    
+    echo "$combined_output"
+}
+
+# =============================================================================
+# FONCTIONS DE VÉRIFICATION
+# =============================================================================
+
+# Vérification du résultat selon le type
+check_result() {
+    local result="$1"
+    local expected="$2"
+    local check_type="$3"
+    
+    case "$check_type" in
+        "contains")
+            [[ "$result" == *"$expected"* ]]
+            ;;
+        "exact")
+            [[ "$result" == "$expected" ]]
+            ;;
+        "regex")
+            [[ "$result" =~ $expected ]]
+            ;;
+        "json")
+            # Vérification JSON basique
+            echo "$result" | jq -e ".$expected" >/dev/null 2>&1
+            ;;
+        "error")
+            [[ "$result" == *"$expected"* ]] || [[ $? -ne 0 ]]
+            ;;
+        "not_contains")
+            [[ "$result" != *"$expected"* ]]
+            ;;
+        "not-contains")
+            [[ "$result" != *"$expected"* ]]
+            ;;
+        *)
+            [[ "$result" == *"$expected"* ]]
+            ;;
+    esac
+}
+
+# =============================================================================
+# FONCTIONS D'INITIALISATION ET NETTOYAGE
+# =============================================================================
+
+# Initialisation de l'environnement de test
+init_test_environment() {
+    # Charger les configurations nécessaires
+    if [[ -f "$SCRIPT_DIR/../../config.sh" ]]; then
+        source "$SCRIPT_DIR/../../config.sh"
+    fi
+    
+    # Créer un répertoire temporaire pour les outputs si nécessaire
+    TEST_OUTPUT_DIR=$(mktemp -d)
+    export TEST_OUTPUT_DIR
+    
+    # Initialiser les compteurs
+    TEST_COUNT=0
+    PASS_COUNT=0
+    FAIL_COUNT=0
+    
+    # Vider les arrays
+    TEST_RESULTS=()
+    TEST_DETAILS=()
+}
+
+# Nettoyage des variables temporaires de test
+unset_test_args() {
+    unset TEST_ARG_DESCRIPTION TEST_ARG_COMMAND TEST_ARG_EXPECTED
+    unset TEST_ARG_INPUT_TYPE TEST_ARG_OUTPUT_CHECK TEST_ARG_TIMEOUT
+    unset TEST_ARG_RETRY TEST_ARG_ERROR_PATTERN TEST_ARG_CONTEXT
+    unset TEST_ARG_SYNC_TEST TEST_ARG_DEBUG
+}
+
+# Nettoyage de l'environnement de test
+cleanup_test_environment() {
+    if [[ -n "$TEST_OUTPUT_DIR" && -d "$TEST_OUTPUT_DIR" ]]; then
+        rm -rf "$TEST_OUTPUT_DIR"
+    fi
+    unset_test_args
+}
+
+# Fonction pour initialiser un test spécifique
+init_test() {
+    local test_name="$1"
+    CURRENT_TEST_NAME="$test_name"
+    echo -e "${PURPLE}=== $test_name ===${NC}"
+    echo ""
+}
+
+# Affichage du résumé des tests
+test_summary() {
+    echo ""
+    echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${CYAN}║                     RÉSUMÉ DU TEST                           ║${NC}"
+    echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+    echo -e "${BLUE}Test: $CURRENT_TEST_NAME${NC}"
+    echo -e "${BLUE}Total des étapes: $TEST_COUNT${NC}"
+    echo -e "${GREEN}Étapes réussies: $PASS_COUNT${NC}"
+    echo -e "${RED}Étapes échouées: $FAIL_COUNT${NC}"
+    
+    if [[ $FAIL_COUNT -gt 0 ]]; then
+        echo ""
+        echo -e "${RED}Détails des échecs:${NC}"
+        for i in "${!TEST_RESULTS[@]}"; do
+            if [[ "${TEST_RESULTS[$i]}" == "FAIL" ]]; then
+                echo -e "${RED}  Étape $i: ${TEST_DETAILS[$i]}${NC}"
+            fi
+        done
+        echo -e "${RED}❌ $FAIL_COUNT tests échoués sur $TEST_COUNT${NC}"
+    else
+        echo -e "${GREEN}🎉 Tous les tests sont PASSÉS ($PASS_COUNT/$TEST_COUNT)${NC}"
+    fi
+    echo ""
+}
+
+# =============================================================================
+# FONCTIONS AVANCÉES POUR TESTS COMPLEXES
+# =============================================================================
+
+# Test avec input depuis fichier
+test_from_file() {
+    local description="$1"
+    local file_path="$2"
+    local expected="$3"
+    
+    if [[ ! -f "$file_path" ]]; then
+        echo -e "${RED}❌ Fichier non trouvé: $file_path${NC}"
+        return 1
+    fi
+    
+    local content=$(cat "$file_path")
+    test_execute "$description" "$content" "$expected" --input-type=file
+}
+
+# Export des fonctions principales pour utilisation dans les scripts de test
+export -f test_execute
+export -f test_from_file
+export -f init_test_environment cleanup_test_environment init_test test_summary
+

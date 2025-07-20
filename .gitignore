@@ -9,3 +9,4 @@ __pycache__
 /vendor-bin/phpstan/composer.lock
 /vendor-bin/phpunit/composer.lock
 /vendor/
+.aider*
